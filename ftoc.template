@@ -1,0 +1,4 @@
+#!/bin/zsh
+
+JAR_FILE="${project.build.directory}/${project.artifactId}-${project.version}-jar-with-dependencies.jar"
+java -jar "${JAR_FILE}" "$@"

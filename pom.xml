@@ -1,171 +1,144 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
-  <!-- Version Information -->
   <modelVersion>4.0.0</modelVersion>
-
-  <!-- Centralized Properties for Version Management -->
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-    <slf4j.version>2.0.16</slf4j.version>
-    <log4j.version>2.20.0</log4j.version>
-    <json.version>20240303</json.version> <!-- Verify availability -->
-    <junit.version>5.11.2</junit.version>
-    <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
-    <gpg.plugin.version>1.6</gpg.plugin.version>
-    <cucumber.version>7.20.1</cucumber.version>
-  </properties>
 
   <groupId>com.heymumford.ftoc</groupId>
   <artifactId>ftoc</artifactId>
-  <version>1.01</version>
-  <packaging>jar</packaging>
+  <version>1.0.7</version>
 
-  <!-- Project Information -->
-  <name>ftoc</name>
-  <description>
-    A command-line utility for analyzing Cucumber/Karate feature files.
-    Generates a Table of Contents (TOC), tag concordance, and provides insights on test coverage and organization.
-  </description>
-  <url>https://github.com/heymumford/ftoc</url>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>11</maven.compiler.release>
 
-  <!-- Licensing Information -->
-  <licenses>
-    <license>
-      <name>The MIT License</name>
-      <url>https://opensource.org/licenses/MIT</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
+    <!-- Dependency Versions -->
+    <cucumber.version>7.20.1</cucumber.version>
+    <slf4j.version>2.0.16</slf4j.version>
+    <junit.jupiter.version>5.8.2</junit.jupiter.version>
+    <junit.platform.version>1.8.2</junit.platform.version>
 
-  <!-- Developer Information -->
-  <developers>
-    <developer>
-      <id>heymumford</id>
-      <name>Eric C. Mumford</name>
-      <email>heymumford@samstraumr.org</email>
-      <url>https://github.com/heymumford</url>
-    </developer>
-  </developers>
+    <!-- Plugin Versions -->
+    <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
+    <maven.jar.plugin.version>3.2.0</maven.jar.plugin.version>
+    <maven.assembly.plugin.version>3.3.0</maven.assembly.plugin.version>
+    <maven.surefire.plugin.version>3.0.0-M5</maven.surefire.plugin.version>
+    <properties.maven.plugin.version>1.0.0</properties.maven.plugin.version>
+  </properties>
 
-  <!-- SCM (Source Control Management) -->
-  <scm>
-    <connection>scm:git:git@github.com:heymumford/ftoc.git</connection>
-    <developerConnection>scm:git:git@github.com:heymumford/ftoc.git</developerConnection>
-    <url>https://github.com/heymumford/ftoc</url>
-  </scm>
-
-  <!-- Dependencies -->
   <dependencies>
-    <!-- Cucumber Core -->
+    <!-- Compile Dependencies -->
     <dependency>
       <groupId>io.cucumber</groupId>
       <artifactId>cucumber-java</artifactId>
       <version>${cucumber.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
 
-    <!-- Cucumber JUnit -->
+    <!-- Test Dependencies -->
     <dependency>
       <groupId>io.cucumber</groupId>
       <artifactId>cucumber-junit-platform-engine</artifactId>
       <version>${cucumber.version}</version>
       <scope>test</scope>
     </dependency>
-
-    <!-- SLF4J API -->
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-    </dependency>
-
-    <!-- Log4j 2 Core -->
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>${log4j.version}</version>
-    </dependency>
-
-    <!-- Log4j SLF4J Binding -->
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j2-impl</artifactId>
-      <version>${log4j.version}</version>
-    </dependency>
-
-    <!-- JSON Library -->
-    <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>${json.version}</version>
-    </dependency>
-
-    <!-- JUnit Jupiter API -->
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-
     <dependency>
       <groupId>org.junit.platform</groupId>
       <artifactId>junit-platform-suite</artifactId>
-      <version>1.10.2</version>
+      <version>${junit.platform.version}</version>
       <scope>test</scope>
     </dependency>
-
-    <!-- JUnit Jupiter Engine -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <version>${junit.version}</version>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.jupiter.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
 
-  <!-- Build and Plugins -->
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
     <plugins>
-      <!-- Maven Compiler Plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven.compiler.plugin.version}</version>
         <configuration>
-          <release>11</release>
+          <release>${maven.compiler.release}</release>
         </configuration>
       </plugin>
-
-      <!-- GPG Plugin for Signing (Optional, for Maven Central) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-gpg-plugin</artifactId>
-        <version>${gpg.plugin.version}</version>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>${maven.jar.plugin.version}</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <mainClass>com.heymumford.ftoc.FtocUtility</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven.assembly.plugin.version}</version>
+        <configuration>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+          <archive>
+            <manifest>
+              <mainClass>com.heymumford.ftoc.FtocUtility</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
         <executions>
           <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
             <goals>
-              <goal>sign</goal>
+              <goal>single</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven.surefire.plugin.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>properties-maven-plugin</artifactId>
+        <version>${properties.maven.plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>write-project-properties</goal>
+            </goals>
+            <configuration>
+              <outputFile>${project.build.outputDirectory}/ftoc-version.properties</outputFile>
+            </configuration>
           </execution>
         </executions>
       </plugin>
     </plugins>
   </build>
-
-  <!-- Distribution Management (Optional, for Maven Central) -->
-  <distributionManagement>
-    <repository>
-      <id>releases</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-    <snapshotRepository>
-      <id>snapshots</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-    </snapshotRepository>
-  </distributionManagement>
-
 </project>

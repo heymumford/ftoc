@@ -4,16 +4,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FtocUtility {
     private static final Logger logger = LoggerFactory.getLogger(FtocUtility.class);
-    private List<File> featureFiles;
+    private static final String VERSION = loadVersion();
+    private final List<File> featureFiles;
     private final Map<String, Integer> tagConcordance;
 
     public FtocUtility() {
@@ -22,10 +24,10 @@ public class FtocUtility {
     }
 
     public void initialize() {
-        logger.info("FTOC utility initialized.");
+        logger.info("FTOC utility version {} initialized.", VERSION);
     }
 
-    public void run(String directoryPath) {
+    public void processDirectory(String directoryPath) {
         try {
             Path directory = Paths.get(directoryPath);
             if (Files.notExists(directory) || !Files.isDirectory(directory)) {
@@ -34,14 +36,13 @@ public class FtocUtility {
             }
 
             logger.info("Running FTOC utility on directory: {}", directoryPath);
-            // Traverse directory and gather feature files
-            featureFiles = findFeatureFiles(directory);
-            if (featureFiles.isEmpty()) {
+            List<File> foundFeatureFiles = findFeatureFiles(directory);
+            if (foundFeatureFiles.isEmpty()) {
                 logger.warn("No feature files found in directory: {}", directoryPath);
                 return;
             }
 
-            // Process each feature file to generate TOC and concordance
+            featureFiles.addAll(foundFeatureFiles);
             featureFiles.forEach(this::processFeatureFile);
             generateConcordanceReport();
             logger.info("FTOC utility finished successfully.");
@@ -51,7 +52,7 @@ public class FtocUtility {
     }
 
     private List<File> findFeatureFiles(Path directory) throws IOException {
-        logger.debug("Searching for feature files in: {}", directory.toString());
+        logger.debug("Searching for feature files in: {}", directory);
         try (Stream<Path> paths = Files.walk(directory)) {
             return paths
                     .filter(path -> path.toString().endsWith(".feature"))
@@ -63,26 +64,22 @@ public class FtocUtility {
     private void processFeatureFile(File file) {
         logger.debug("Processing feature file: {}", file.getName());
         try {
-            List<String> lines = Files.readAllLines(file.toPath());
-            for (String line : lines) {
-                if (line.trim().startsWith("Scenario") || line.trim().startsWith("Scenario Outline")) {
-                    logger.info("Found scenario in {}: {}", file.getName(), line.trim());
+            Files.lines(file.toPath()).forEach(line -> {
+                line = line.trim();
+                if (line.startsWith("Scenario") || line.startsWith("Scenario Outline")) {
+                    logger.info("Found scenario in {}: {}", file.getName(), line);
+                } else if (line.startsWith("@")) {
+                    updateTagConcordance(line);
                 }
-                // Extract and count tags
-                if (line.trim().startsWith("@")) {
-                    updateTagConcordance(line.trim());
-                }
-            }
+            });
         } catch (IOException e) {
             logger.error("Error processing feature file {}: {}", file.getName(), e.getMessage());
         }
     }
 
     private void updateTagConcordance(String tagLine) {
-        String[] tags = tagLine.split("\\s+");
-        for (String tag : tags) {
-            tagConcordance.put(tag, tagConcordance.getOrDefault(tag, 0) + 1);
-        }
+        Arrays.stream(tagLine.split("\\s+"))
+                .forEach(tag -> tagConcordance.merge(tag, 1, Integer::sum));
         logger.debug("Updated tag concordance: {}", tagLine);
     }
 
@@ -92,23 +89,48 @@ public class FtocUtility {
         logger.info("Concordance report generated successfully.");
     }
 
-    public boolean isTocGenerated() {
-        return !featureFiles.isEmpty();
+    private static String loadVersion() {
+        Properties properties = new Properties();
+        try (InputStream input = FtocUtility.class.getClassLoader().getResourceAsStream("ftoc-version.properties")) {
+            if (input == null) {
+                return "unknown";
+            }
+            properties.load(input);
+            return properties.getProperty("version", "unknown");
+        } catch (IOException e) {
+            return "unknown";
+        }
     }
-
-    public boolean isConcordanceGenerated() {
-        return !tagConcordance.isEmpty();
+    private static void printHelp() {
+        System.out.println("FTOC Utility version " + VERSION);
+        System.out.println("Usage: ftoc [-d <directory>] [--version | -v] [--help]");
+        System.out.println("Options:");
+        System.out.println("  -d <directory>    Specify the directory to analyze (default: current directory)");
+        System.out.println("  --version, -v     Display version information");
+        System.out.println("  --help            Display this help message");
     }
 
     public static void main(String[] args) {
+        if (args.length == 0 || Arrays.asList(args).contains("--help")) {
+            printHelp();
+            return;
+        }
+
+        if (Arrays.asList(args).contains("--version") || Arrays.asList(args).contains("-v")) {
+            System.out.println("FTOC Utility version " + VERSION);
+            return;
+        }
+
+        String directoryPath = ".";
+        for (int i = 0; i < args.length; i++) {
+            if ("-d".equals(args[i]) && i + 1 < args.length) {
+                directoryPath = args[i + 1];
+                break;
+            }
+        }
+
         FtocUtility ftoc = new FtocUtility();
         ftoc.initialize();
-        if (args.length > 0) {
-            ftoc.run(args[0]); // Pass the directory as an argument
-        } else {
-            Logger logger = LoggerFactory.getLogger(FtocUtility.class);
-            logger.error("No directory specified. Please provide a directory path.");
-        }
+        ftoc.processDirectory(directoryPath);
     }
 }
-
