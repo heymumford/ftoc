@@ -7,25 +7,30 @@
 
   <!-- Centralized Properties for Version Management -->
   <properties>
-    <ftoc.version>1.0-SNAPSHOT</ftoc.version>
-    <slf4j.version>1.7.30</slf4j.version>
-    <log4j.version>1.2.17</log4j.version>
-    <json.version>20210307</json.version>
-    <junit.version>4.13.2</junit.version>
-    <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <slf4j.version>2.0.16</slf4j.version>
+    <log4j.version>2.20.0</log4j.version>
+    <json.version>20240303</json.version> <!-- Verify availability -->
+    <junit.version>5.11.2</junit.version>
+    <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
     <gpg.plugin.version>1.6</gpg.plugin.version>
-    <maven.source.version>1.8</maven.source.version>
-    <maven.target.version>1.8</maven.target.version>
+    <maven.source.version>11</maven.source.version>
+    <maven.target.version>11</maven.target.version>
   </properties>
 
   <groupId>com.heymumford.ftoc</groupId>
   <artifactId>ftoc</artifactId>
-  <version>${ftoc.version}</version>
+  <version>1.0</version>
   <packaging>jar</packaging>
 
   <!-- Project Information -->
   <name>ftoc</name>
-  <description>A feature file table of contents (TOC) generator and concordance utility</description>
+  <description>
+    A command-line utility for analyzing Cucumber/Karate feature files.
+    Generates a Table of Contents (TOC), tag concordance, and provides insights on test coverage and organization.
+  </description>
   <url>https://github.com/heymumford/ftoc</url>
 
   <!-- Licensing Information -->
@@ -41,8 +46,8 @@
   <developers>
     <developer>
       <id>heymumford</id>
-      <name>Eric Mumford</name>
-      <email>your-email@example.com</email>
+      <name>Eric C. Mumford</name>
+      <email>heymumford@samstraumr.org</email>
       <url>https://github.com/heymumford</url>
     </developer>
   </developers>
@@ -59,17 +64,24 @@
 
     <!-- BEGIN: Safe to delete if using Karate -->
 
-    <!-- SLF4J for Logging Abstraction -->
+    <!-- SLF4J API -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j.version}</version>
     </dependency>
 
-    <!-- Log4j for Logging -->
+    <!-- Log4j 2 Core -->
     <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${log4j.version}</version>
+    </dependency>
+
+    <!-- Log4j SLF4J Binding -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
       <version>${log4j.version}</version>
     </dependency>
 
@@ -82,10 +94,18 @@
 
     <!-- END: Safe to delete if using Karate -->
 
-    <!-- JUnit for Testing (Keep if needed for tests) -->
+    <!-- JUnit Jupiter API -->
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- JUnit Jupiter Engine -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
       <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
@@ -104,10 +124,10 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven.compiler.plugin.version}</version>
         <configuration>
-          <source>${maven.source.version}</source>
-          <target>${maven.target.version}</target>
+          <release>11</release>
         </configuration>
       </plugin>
+
 
       <!-- GPG Plugin for Signing (Optional, for Maven Central) -->
       <plugin>
