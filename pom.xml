@@ -16,13 +16,12 @@
     <junit.version>5.11.2</junit.version>
     <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
     <gpg.plugin.version>1.6</gpg.plugin.version>
-    <maven.source.version>11</maven.source.version>
-    <maven.target.version>11</maven.target.version>
+    <cucumber.version>7.20.1</cucumber.version>
   </properties>
 
   <groupId>com.heymumford.ftoc</groupId>
   <artifactId>ftoc</artifactId>
-  <version>1.0</version>
+  <version>1.01</version>
   <packaging>jar</packaging>
 
   <!-- Project Information -->
@@ -61,8 +60,20 @@
 
   <!-- Dependencies -->
   <dependencies>
+    <!-- Cucumber Core -->
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-java</artifactId>
+      <version>${cucumber.version}</version>
+    </dependency>
 
-    <!-- BEGIN: Safe to delete if using Karate -->
+    <!-- Cucumber JUnit -->
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-junit-platform-engine</artifactId>
+      <version>${cucumber.version}</version>
+      <scope>test</scope>
+    </dependency>
 
     <!-- SLF4J API -->
     <dependency>
@@ -92,13 +103,18 @@
       <version>${json.version}</version>
     </dependency>
 
-    <!-- END: Safe to delete if using Karate -->
-
     <!-- JUnit Jupiter API -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite</artifactId>
+      <version>1.10.2</version>
       <scope>test</scope>
     </dependency>
 
@@ -109,15 +125,11 @@
       <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
   <!-- Build and Plugins -->
   <build>
     <plugins>
-
-      <!-- BEGIN: Safe to delete if using Karate -->
-
       <!-- Maven Compiler Plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -127,7 +139,6 @@
           <release>11</release>
         </configuration>
       </plugin>
-
 
       <!-- GPG Plugin for Signing (Optional, for Maven Central) -->
       <plugin>
@@ -142,9 +153,6 @@
           </execution>
         </executions>
       </plugin>
-
-      <!-- END: Safe to delete if using Karate -->
-
     </plugins>
   </build>
 
