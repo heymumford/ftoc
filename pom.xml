@@ -1,18 +1,143 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <!-- Version Information -->
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.example.ftoc</groupId>
+
+  <!-- Centralized Properties for Version Management -->
+  <properties>
+    <ftoc.version>1.0-SNAPSHOT</ftoc.version>
+    <slf4j.version>1.7.30</slf4j.version>
+    <log4j.version>1.2.17</log4j.version>
+    <json.version>20210307</json.version>
+    <junit.version>4.13.2</junit.version>
+    <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
+    <gpg.plugin.version>1.6</gpg.plugin.version>
+    <maven.source.version>1.8</maven.source.version>
+    <maven.target.version>1.8</maven.target.version>
+  </properties>
+
+  <groupId>com.heymumford.ftoc</groupId>
   <artifactId>ftoc</artifactId>
+  <version>${ftoc.version}</version>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
+
+  <!-- Project Information -->
   <name>ftoc</name>
-  <url>http://maven.apache.org</url>
+  <description>A feature file table of contents (TOC) generator and concordance utility</description>
+  <url>https://github.com/heymumford/ftoc</url>
+
+  <!-- Licensing Information -->
+  <licenses>
+    <license>
+      <name>The MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <!-- Developer Information -->
+  <developers>
+    <developer>
+      <id>heymumford</id>
+      <name>Eric Mumford</name>
+      <email>your-email@example.com</email>
+      <url>https://github.com/heymumford</url>
+    </developer>
+  </developers>
+
+  <!-- SCM (Source Control Management) -->
+  <scm>
+    <connection>scm:git:git@github.com:heymumford/ftoc.git</connection>
+    <developerConnection>scm:git:git@github.com:heymumford/ftoc.git</developerConnection>
+    <url>https://github.com/heymumford/ftoc</url>
+  </scm>
+
+  <!-- Dependencies -->
   <dependencies>
+
+    <!-- BEGIN: Safe to delete if using Karate -->
+
+    <!-- SLF4J for Logging Abstraction -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+
+    <!-- Log4j for Logging -->
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>${log4j.version}</version>
+    </dependency>
+
+    <!-- JSON Library -->
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>${json.version}</version>
+    </dependency>
+
+    <!-- END: Safe to delete if using Karate -->
+
+    <!-- JUnit for Testing (Keep if needed for tests) -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>3.8.1</version>
+      <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
+
   </dependencies>
+
+  <!-- Build and Plugins -->
+  <build>
+    <plugins>
+
+      <!-- BEGIN: Safe to delete if using Karate -->
+
+      <!-- Maven Compiler Plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven.compiler.plugin.version}</version>
+        <configuration>
+          <source>${maven.source.version}</source>
+          <target>${maven.target.version}</target>
+        </configuration>
+      </plugin>
+
+      <!-- GPG Plugin for Signing (Optional, for Maven Central) -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>${gpg.plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- END: Safe to delete if using Karate -->
+
+    </plugins>
+  </build>
+
+  <!-- Distribution Management (Optional, for Maven Central) -->
+  <distributionManagement>
+    <repository>
+      <id>releases</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+    <snapshotRepository>
+      <id>snapshots</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+
 </project>
