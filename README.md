@@ -1,20 +1,18 @@
 # `ftoc` - Feature Table of Contents Utility
 
-`ftoc` is a command-line utility that analyzes Cucumber/Karate feature files to generate:
+This utility is under construction as of Oct 2024 and this line will be deleted when it's ready for prime time.
 
-1. A Table of Contents (TOC) of all scenarios and scenario outlines
-2. A concordance of all tags used across feature files
-3. Warnings for missing tags or use of generic "dumb" tags
+`ftoc` (Feature-File Table of Contents) is a utility that tells you things bout your Cucumber feature files.
 
-It operates by recursively traversing a specified directory, parsing `.feature` files, and outputting results in markdown format.
+It tries to produce:
 
-Key functions:
-- Extracts scenario names, outline names, and tags from feature files
-- Compiles tag usage statistics
-- Identifies feature files without tags
-- Warns about predefined "dumb" tags (e.g., "test", "temp", "ignore")
+1. A Table of Contents (TOC) of all scenarios and scenario outlines you point it to
+2. A concordance (count of groups) of all tags used across feature files
+3. Warnings for missing tags or use of generic "dumb" tags like [debug, test, sanity, stage] or other overloaded words
 
-Output is designed for easy integration with documentation or code review processes.
+... in order to show you useful information about existing tests. I've scripted variants of this
+utility across several consulting engagements and figured I'd produce a formal open source version.
+
 
 ## Building the Project
 
