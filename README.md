@@ -2,7 +2,8 @@
 
 This utility is under construction as of Oct 2024 and this line will be deleted when it's ready for prime time.
 
-`ftoc` (Feature-File Table of Contents) is a utility that tells you things bout your Cucumber feature files.
+`ftoc` (Feature-File Table of Contents) is a utility that tells you things about your Cucumber feature files.
+It should work with all Cucumber text files (Java, Javascript, Karate framework).
 
 It tries to produce:
 
