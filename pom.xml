@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.heymumford.ftoc</groupId>
   <artifactId>ftoc</artifactId>
-  <version>0.5.5</version>
+  <version>0.5.6</version>
   <name>FTOC - Feature Table of Contents Utility</name>
   <description>A command-line utility for Cucumber feature file analysis, documentation, and quality assurance</description>
   <url>https://github.com/heymumford/ftoc</url>
