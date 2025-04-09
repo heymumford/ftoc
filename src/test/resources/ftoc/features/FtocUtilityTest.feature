@@ -46,6 +46,6 @@ Feature: Testing FTOC utility using its own feature files
     Given the ftoc utility is initialized
     When I enable tag quality analysis
     And I set tag quality format to "text"
-    And I run the utility on the "src/test/resources/ftoc/test-feature-files" directory
+    And I run the utility with tag quality analysis on "src/test/resources/ftoc/test-feature-files" directory
     Then a tag quality report should be generated
     And the tag quality report should contain warnings

@@ -768,6 +768,39 @@ public class FtocUtilityStepDefs {
         logger.info("Enabled tag quality analysis");
     }
     
+    @And("I run the utility with tag quality analysis on {string} directory")
+    public void runUtilityWithTagQualityAnalysis(String directoryPath) {
+        // Capture the output
+        PrintStream originalOut = System.out;
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outputStream));
+        
+        try {
+            // Enable tag quality analysis and set format to plain text
+            ftoc.setAnalyzeTagQuality(true);
+            ftoc.setTagQualityFormat(TagQualityFormatter.Format.PLAIN_TEXT);
+            
+            // Process the directory
+            ftoc.processDirectory(directoryPath);
+            
+            // Save the captured output
+            capturedOutput = outputStream.toString();
+            
+            // Debug output
+            System.setOut(originalOut);
+            logger.info("Captured output with tag quality analysis: {}", 
+                    capturedOutput.substring(0, Math.min(200, capturedOutput.length())) + "...");
+            
+            // Print a little more of the output for debugging
+            if (capturedOutput.length() > 500) {
+                logger.info("More output: {}", capturedOutput.substring(200, 500));
+            }
+        } finally {
+            // Restore original output stream
+            System.setOut(originalOut);
+        }
+    }
+    
     @When("I set tag quality format to {string}")
     public void setTagQualityFormat(String format) {
         TagQualityFormatter.Format qualityFormat;
@@ -795,6 +828,9 @@ public class FtocUtilityStepDefs {
         logger.info("Checking for tag quality report generation");
         assertNotNull(capturedOutput, "No output was captured");
         
+        // Dump the output to the log for debugging
+        logger.info("Full captured output: {}", capturedOutput);
+        
         // Check for tag quality report header
         boolean hasQualityReport = capturedOutput.contains("TAG QUALITY REPORT") || 
                                   capturedOutput.contains("Tag Quality Report") ||
@@ -813,9 +849,24 @@ public class FtocUtilityStepDefs {
         boolean hasWarnings = capturedOutput.contains("warning") || 
                              capturedOutput.contains("Warning") ||
                              capturedOutput.contains("MISSING_") ||
-                             capturedOutput.contains("TAG_TYPO");
+                             capturedOutput.contains("TAG_TYPO") ||
+                             capturedOutput.contains("ORPHANED_TAG") ||
+                             capturedOutput.contains("DUPLICATE_TAG") ||
+                             capturedOutput.contains("EXCESSIVE_TAGS");
         
         logger.info("Has warnings in report: {}", hasWarnings);
+        
+        // If we don't find warnings, print fragments of the output to help debug
+        if (!hasWarnings) {
+            if (capturedOutput.contains("quality")) {
+                int index = capturedOutput.indexOf("quality");
+                int startIndex = Math.max(0, index - 100);
+                int endIndex = Math.min(capturedOutput.length(), index + 100);
+                logger.info("Output fragment around 'quality': {}", 
+                        capturedOutput.substring(startIndex, endIndex));
+            }
+        }
+        
         assertTrue(hasWarnings, "Tag quality report does not contain any warnings");
     }
 }
