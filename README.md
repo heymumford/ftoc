@@ -1,96 +1,78 @@
-# `ftoc` - Feature Table of Contents Utility
+# ftoc - Feature Table of Contents Utility
 
-This utility is under construction as of Oct 2024 and this line will be deleted when it's ready for prime time.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-`ftoc` (Feature-File Table of Contents) is a utility that tells you things about your Cucumber feature files.
-It should work with all Cucumber text files (Java, Javascript, Karate framework).
+A command-line utility for Cucumber feature file analysis, documentation, and quality assurance.
 
-It tries to produce:
+## Overview
 
-1. A Table of Contents (TOC) of all scenarios and scenario outlines you point it to
-2. A concordance (count of groups) of all tags used across feature files
-3. Warnings for missing tags or use of generic "dumb" tags like [debug, test, sanity, stage] or other overloaded words
+`ftoc` analyzes Cucumber feature files to create documentation and perform quality checks, helping development teams maintain consistent BDD practices. It works with all Cucumber-compatible implementations (Java, JavaScript, Ruby, Karate).
 
-... in order to show you useful information about existing tests. I've scripted variants of this
-utility across several consulting engagements and figured I'd produce a formal open source version.
+## Key Features
 
+- **Table of Contents Generation:** Creates structured TOC of all scenarios and scenario outlines
+- **Tag Concordance:** Counts and analyzes tag usage across feature files
+- **Quality Assurance:** Flags missing tags or use of low-value generic tags
+- **Cross-Language Support:** Works with feature files in any Cucumber implementation
 
-## Building the Project
+## Who Is This For?
 
-To build the `ftoc` utility:
+- QA Engineers working with BDD/Cucumber frameworks
+- Development teams practicing Behavior-Driven Development
+- DevOps engineers integrating test reporting into CI/CD pipelines
+- Project managers tracking test coverage and organization
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/heymumford/ftoc.git
-   cd ftoc
-   ```
+## Installation
 
-2. Build the project using Maven:
-   ```bash
-   mvn clean package
-   ```
+```bash
+git clone https://github.com/heymumford/ftoc.git
+cd ftoc
+mvn clean package
+```
 
-This will create a JAR file in the `target` directory named `ftoc-<version>-jar-with-dependencies.jar`.
-
-## Usage Instructions
-
-After building the project, you can run `ftoc` as follows:
+## Usage
 
 ```bash
 java -jar target/ftoc-<version>-jar-with-dependencies.jar [OPTIONS]
 ```
 
-Replace `<version>` with the current version number of the utility.
-
-### Options:
+### Options
 
 - `-d <directory>`: Specify the directory to analyze (default: current directory)
-- `--version` or `-v`: Display version information
+- `--version`, `-v`: Display version information
 - `--help`: Display help message
 
-### Examples:
+## Example
 
-1. Display version information:
-   ```bash
-   java -jar target/ftoc-<version>-jar-with-dependencies.jar --version
-   ```
+```bash
+# Analyze all feature files in a specific directory
+java -jar target/ftoc-1.0.7-jar-with-dependencies.jar -d src/test/resources/features
 
-2. Analyze feature files in a specific directory:
-   ```bash
-   java -jar target/ftoc-<version>-jar-with-dependencies.jar -d /path/to/feature/files
-   ```
+# Get version information
+java -jar target/ftoc-1.0.7-jar-with-dependencies.jar --version
+```
 
-3. Display help information:
-   ```bash
-   java -jar target/ftoc-<version>-jar-with-dependencies.jar --help
-   ```
+## Programmatic Usage
 
-## Integration with Other Projects
+```java
+import com.heymumford.ftoc.FtocUtility;
 
-To use `ftoc` in your Java project:
+FtocUtility ftoc = new FtocUtility();
+ftoc.initialize();
+ftoc.processDirectory("/path/to/feature/files");
+```
 
-1. Build the `ftoc` project as described above.
+## Why ftoc?
 
-2. Add the generated JAR file to your project's classpath.
+Managing large suites of Cucumber tests presents challenges:
 
-3. You can then use the `FtocUtility` class in your code:
+- **Discoverability:** Finding relevant scenarios becomes difficult as test suites grow
+- **Tag Consistency:** Ensuring proper tagging for test selection and reporting
+- **Documentation:** Generating up-to-date documentation from feature files
+- **Quality Control:** Avoiding generic, unhelpful tagging patterns
 
-   ```java
-   import com.heymumford.ftoc.FtocUtility;
-
-   public class YourClass {
-       public void runFtoc() {
-           FtocUtility ftoc = new FtocUtility();
-           ftoc.initialize();
-           ftoc.processDirectory("/path/to/feature/files");
-       }
-   }
-   ```
-
-## Contribution and Support
-
-If you'd like to contribute to `ftoc` or need support, please open an issue or submit a pull request on [GitHub](https://github.com/heymumford/ftoc).
+`ftoc` addresses these challenges with automated analysis and reporting tools.
 
 ## License
 
-`ftoc` is open-source and available under the MIT license. See the [LICENSE](https://github.com/heymumford/ftoc/blob/main/LICENSE) file for more details.
+MIT © [heymumford](https://github.com/heymumford)
