@@ -1,0 +1,52 @@
+{
+  "name": "FTOC Workspace",
+  "description": "Feature Table of Contents utility for analyzing Cucumber feature files",
+  "important_files": [
+    {
+      "path": "src/main/java/com/heymumford/ftoc/FtocUtility.java",
+      "description": "Main utility class for Feature Table of Contents"
+    },
+    {
+      "path": ".github/copilot/CODE_PATTERNS.md",
+      "description": "Code patterns and conventions for the project"
+    },
+    {
+      "path": "docs/developer/KANBAN.md",
+      "description": "Project Kanban board with tasks and progress"
+    },
+    {
+      "path": "src/test/resources/ftoc/features/FtocUtilityTest.feature",
+      "description": "Cucumber feature tests for the FTOC utility"
+    },
+    {
+      "path": "src/test/java/com/heymumford/ftoc/steps/FtocUtilityStepDefs.java",
+      "description": "Step definitions for Cucumber tests"
+    },
+    {
+      "path": "pom.xml",
+      "description": "Maven project configuration"
+    }
+  ],
+  "common_tasks": [
+    {
+      "name": "build",
+      "command": "make build",
+      "description": "Build the project with Maven"
+    },
+    {
+      "name": "test",
+      "command": "make test",
+      "description": "Run Cucumber tests"
+    },
+    {
+      "name": "run",
+      "command": "./ftoc",
+      "description": "Run the FTOC utility"
+    },
+    {
+      "name": "version",
+      "command": "./version show",
+      "description": "Show current version"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+name: Copilot Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - '**.java'
+      - 'pom.xml'
+      - 'src/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  copilot-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Copilot for PR
+        uses: github/copilot-for-pull-requests@v0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          filter_files_regex: '\.(java|feature)$'
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
