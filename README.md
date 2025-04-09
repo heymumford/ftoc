@@ -77,6 +77,25 @@ Managing large suites of Cucumber tests presents challenges:
 
 `ftoc` addresses these challenges with automated analysis and reporting tools.
 
+## Documentation
+
+### Architecture and Design
+
+- [Architecture Decision Records (ADRs)](docs/adr/README.md)
+- [C4 Architecture Diagrams](docs/c4/README.md)
+
+### Project Management
+
+- [Kanban Board](docs/KANBAN.md)
+- [Version Management Guide](docs/VERSION_MANAGEMENT.md)
+
+### Technical Documentation
+
+- [Classpath Optimization Report](docs/CLASSPATH_OPTIMIZATION.md)
+- [Claude AI Assistant Guide](docs/CLAUDE.md)
+
+For all documentation, see the [docs directory](docs/README.md).
+
 ## Version Management
 
 FTOC uses semantic versioning (MAJOR.MINOR.PATCH) combined with build numbers for precise tracking:
@@ -85,8 +104,6 @@ FTOC uses semantic versioning (MAJOR.MINOR.PATCH) combined with build numbers fo
 # Display version information
 ./version.sh summary
 ```
-
-See [VERSION_MANAGEMENT.md](VERSION_MANAGEMENT.md) for details on the versioning system.
 
 ## License
 
