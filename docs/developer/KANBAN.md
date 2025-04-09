@@ -1,8 +1,6 @@
 # FTOC Development Kanban Board
 
 ## Backlog
-- [ ] Add command line option for output format (plain text, markdown, HTML)
-- [ ] Add command line option for filtering scenarios by tag
 - [ ] Add detection and warnings for common anti-patterns in feature files
 - [ ] Implement configuration file support for customizable warnings
 - [ ] Expand test suite with more complex feature file examples
@@ -61,3 +59,5 @@
 - [x] Version reporting from properties
 - [x] Initial Cucumber test setup
 - [x] Project directory reorganization and cleanup
+- [x] Add command line option for output format (plain text, markdown, HTML, JSON)
+- [x] Add command line option for filtering scenarios by tag

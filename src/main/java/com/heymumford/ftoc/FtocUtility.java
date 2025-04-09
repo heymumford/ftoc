@@ -279,10 +279,13 @@ public class FtocUtility {
     
     private static void printHelp() {
         System.out.println("FTOC Utility version " + VERSION);
-        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--concordance-format <format>] [--analyze-tags] [--tag-quality-format <format>] [--version | -v] [--help]");
+        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--concordance-format <format>] [--analyze-tags] [--tag-quality-format <format>] [--format <format>] [--version | -v] [--help]");
         System.out.println("Options:");
         System.out.println("  -d <directory>      Specify the directory to analyze (default: current directory)");
         System.out.println("  -f <format>         Specify TOC output format (text, md, html, json) (default: text)");
+        System.out.println("                      Same as --format");
+        System.out.println("  --format <format>   Specify output format for all reports (text, md, html, json)");
+        System.out.println("                      This is a shorthand to set all format options at once");
         System.out.println("  --tags <tags>       Include only scenarios with at least one of these tags");
         System.out.println("                      Comma-separated list, e.g. \"@P0,@Smoke\"");
         System.out.println("  --exclude-tags <tags> Exclude scenarios with any of these tags");
@@ -322,17 +325,25 @@ public class FtocUtility {
             if ("-d".equals(args[i]) && i + 1 < args.length) {
                 directoryPath = args[i + 1];
                 i++; // Skip the next argument
-            } else if ("-f".equals(args[i]) && i + 1 < args.length) {
+            } else if (("-f".equals(args[i]) || "--format".equals(args[i])) && i + 1 < args.length) {
+                // Parse the format once and apply to all formatters
                 String formatStr = args[i + 1].toLowerCase();
+                TocFormatter.Format selectedFormat;
                 if ("md".equals(formatStr) || "markdown".equals(formatStr)) {
-                    tocFormat = TocFormatter.Format.MARKDOWN;
+                    selectedFormat = TocFormatter.Format.MARKDOWN;
                 } else if ("html".equals(formatStr)) {
-                    tocFormat = TocFormatter.Format.HTML;
+                    selectedFormat = TocFormatter.Format.HTML;
                 } else if ("json".equals(formatStr)) {
-                    tocFormat = TocFormatter.Format.JSON;
+                    selectedFormat = TocFormatter.Format.JSON;
                 } else {
-                    tocFormat = TocFormatter.Format.PLAIN_TEXT;
+                    selectedFormat = TocFormatter.Format.PLAIN_TEXT;
                 }
+                
+                // Apply the format to all formatters
+                tocFormat = selectedFormat;
+                concordanceFormat = ConcordanceFormatter.Format.valueOf(selectedFormat.name());
+                tagQualityFormat = TagQualityFormatter.Format.valueOf(selectedFormat.name());
+                
                 i++; // Skip the next argument
             } else if ("--concordance-format".equals(args[i]) && i + 1 < args.length) {
                 String formatStr = args[i + 1].toLowerCase();
