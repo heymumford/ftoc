@@ -48,8 +48,8 @@
   - [x] Create Copilot CLI integrations
     - [x] Setup script for Copilot CLI
     - [x] Add custom project aliases
-  - [ ] Explore Copilot Extension development
-  - [ ] Setup Copilot Edits modes for common tasks
+  - [x] Explore Copilot Extension development
+  - [x] Setup Copilot Edits modes for common tasks
 
 ## Architecture Improvements
 - [x] Create proper separation of concerns (Parser, Processor, Reporter)

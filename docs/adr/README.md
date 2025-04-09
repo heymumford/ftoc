@@ -47,6 +47,7 @@ Each ADR follows this format:
 4. [ADR-0004: Tag Analysis Approach](0004-tag-analysis.md)
 5. [ADR-0005: Test-Driven Development Approach](0005-test-driven-development.md)
 6. [ADR-0006: Separation of Concerns Architecture](0006-separation-of-concerns.md)
+7. [ADR-0007: GitHub Copilot Integration](0007-github-copilot-integration.md)
 
 ## Creating New ADRs
 

@@ -2,7 +2,7 @@
 
 FTOC solves the challenge of managing large Cucumber test suites by automatically analyzing feature files to improve discoverability, ensure tag consistency, and maintain quality. It generates structured documentation, comprehensive tag analysis with visualizations, and quality metrics that help teams effectively organize their BDD tests. With cross-language support and CI/CD integration, FTOC bridges the gap between test authoring and maintainable, discoverable test documentation.
 
-[![Version](https://img.shields.io/badge/version-0.5.3-brightgreen.svg)](https://github.com/heymumford/ftoc/releases/tag/v0.5.3)
+[![Version](https://img.shields.io/badge/version-0.5.4-brightgreen.svg)](https://github.com/heymumford/ftoc/releases/tag/v0.5.4)
 [![Build](https://img.shields.io/badge/build-12-blue.svg)](https://github.com/heymumford/ftoc/actions)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 [![Java Version](https://img.shields.io/badge/java-11+-orange.svg)](https://openjdk.java.net/)
@@ -28,6 +28,11 @@ FTOC solves the challenge of managing large Cucumber test suites by automaticall
 - **CI/CD Integration:** Generates JUnit XML reports for integration with CI systems
 - **Test Pyramid Integration:** System testing with Karate for robust CLI validation
 - **Multi-Format Output:** Plain text, Markdown, HTML, and JSON reporting
+- **GitHub Copilot Integration:**
+  - IDE configurations for VS Code and JetBrains
+  - CLI integration with custom aliases and scripts
+  - VS Code extension prototype for enhanced feature file editing
+  - Custom edit modes for common FTOC tasks
 
 ## Who Is This For?
 
@@ -130,6 +135,7 @@ Managing large suites of Cucumber tests presents challenges:
 - [Architecture Decision Records (ADRs)](docs/adr/README.md)
 - [C4 Architecture Diagrams](docs/c4/README.md)
 - [Project Kanban Board](docs/developer/KANBAN.md)
+- [GitHub Copilot Integration](docs/developer/GITHUB_COPILOT.md)
 - [Version Management Guide](docs/developer/VERSION_MANAGEMENT.md)
 - [Classpath Optimization Report](docs/developer/CLASSPATH_OPTIMIZATION.md)
 - [XML Standards and Cleanup](docs/developer/XML_STANDARDS.md)

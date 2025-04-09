@@ -1,0 +1,61 @@
+{
+  "ftoc.snippets.java": {
+    "version": "1.0.0",
+    "templates": [
+      {
+        "name": "formatter-class",
+        "description": "Template for creating a new FTOC formatter",
+        "content": "package com.heymumford.ftoc.formatter;\n\nimport com.heymumford.ftoc.model.Feature;\nimport com.heymumford.ftoc.model.Scenario;\n\nimport java.util.List;\nimport java.util.stream.Collectors;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\n\n/**\n * ${description}\n */\npublic class ${className} implements Formatter {\n    private static final Logger logger = LoggerFactory.getLogger(${className}.class);\n    \n    /**\n     * Generate ${format} output for the provided features.\n     * \n     * @param features List of features to include in the output\n     * @return Formatted string representing the features\n     */\n    @Override\n    public String generate(List<Feature> features) {\n        logger.debug(\"Generating ${format} output for {} features\", features.size());\n        \n        ${implementation}\n        \n        return sb.toString();\n    }\n    \n    ${additional_methods}\n}",
+        "variables": {
+          "className": {
+            "type": "string",
+            "description": "Name of the formatter class"
+          },
+          "description": {
+            "type": "text",
+            "description": "Description of the formatter class"
+          },
+          "format": {
+            "type": "string",
+            "description": "Output format name (e.g., CSV, XML, etc.)"
+          },
+          "implementation": {
+            "type": "text",
+            "description": "Implementation of the generate method",
+            "default": "StringBuilder sb = new StringBuilder();\n        \n        // TODO: Implement formatter logic"
+          },
+          "additional_methods": {
+            "type": "text",
+            "description": "Additional helper methods",
+            "default": "// Additional helper methods can be added here"
+          }
+        }
+      },
+      {
+        "name": "analyzer-class",
+        "description": "Template for creating a new FTOC analyzer",
+        "content": "package com.heymumford.ftoc.analyzer;\n\nimport com.heymumford.ftoc.model.Feature;\nimport com.heymumford.ftoc.model.Scenario;\nimport com.heymumford.ftoc.model.AnalysisResult;\n\nimport java.util.List;\nimport java.util.Map;\nimport java.util.HashMap;\nimport java.util.stream.Collectors;\n\nimport org.slf4j.Logger;\nimport org.slf4j.LoggerFactory;\n\n/**\n * ${description}\n */\npublic class ${className} implements Analyzer {\n    private static final Logger logger = LoggerFactory.getLogger(${className}.class);\n    \n    /**\n     * Analyze the provided features.\n     * \n     * @param features List of features to analyze\n     * @return Analysis result\n     */\n    @Override\n    public AnalysisResult analyze(List<Feature> features) {\n        logger.debug(\"Analyzing {} features\", features.size());\n        \n        ${implementation}\n        \n        return result;\n    }\n    \n    ${additional_methods}\n}",
+        "variables": {
+          "className": {
+            "type": "string",
+            "description": "Name of the analyzer class"
+          },
+          "description": {
+            "type": "text",
+            "description": "Description of the analyzer class"
+          },
+          "implementation": {
+            "type": "text",
+            "description": "Implementation of the analyze method",
+            "default": "AnalysisResult result = new AnalysisResult();\n        \n        // TODO: Implement analyzer logic"
+          },
+          "additional_methods": {
+            "type": "text",
+            "description": "Additional helper methods",
+            "default": "// Additional helper methods can be added here"
+          }
+        }
+      }
+    ]
+  }
+}

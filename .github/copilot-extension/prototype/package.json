@@ -1,0 +1,109 @@
+{
+  "name": "ftoc-vscode",
+  "displayName": "FTOC - Feature Table of Contents",
+  "description": "VS Code extension for FTOC with GitHub Copilot integration",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Testing",
+    "Formatters",
+    "Linters",
+    "Snippets"
+  ],
+  "activationEvents": [
+    "onLanguage:feature",
+    "onCommand:ftoc.analyze",
+    "onCommand:ftoc.report",
+    "onCommand:ftoc.generate",
+    "onView:ftocTagExplorer"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ftoc.analyze",
+        "title": "FTOC: Analyze Feature Files"
+      },
+      {
+        "command": "ftoc.report",
+        "title": "FTOC: Generate Report"
+      },
+      {
+        "command": "ftoc.generate",
+        "title": "FTOC: Create Feature File"
+      },
+      {
+        "command": "ftoc.suggestTags",
+        "title": "FTOC: Suggest Tags"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "ftocTagExplorer",
+          "name": "FTOC Tags"
+        }
+      ]
+    },
+    "languages": [
+      {
+        "id": "feature",
+        "aliases": ["Gherkin", "Cucumber"],
+        "extensions": [".feature"]
+      }
+    ],
+    "configuration": {
+      "title": "FTOC",
+      "properties": {
+        "ftoc.enableCopilotIntegration": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable integration with GitHub Copilot"
+        },
+        "ftoc.analysisOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run FTOC analysis on save"
+        },
+        "ftoc.tagRecommendations": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show tag recommendations"
+        },
+        "ftoc.ftocPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to FTOC executable"
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "feature",
+        "path": "./snippets/feature.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
+    "@vscode/test-electron": "^2.3.8",
+    "eslint": "^8.54.0",
+    "glob": "^10.3.10",
+    "mocha": "^10.2.0",
+    "typescript": "^5.3.2"
+  }
+}

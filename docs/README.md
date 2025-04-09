@@ -15,6 +15,7 @@ This directory contains all documentation for the FTOC project.
 ### Developer Documentation
 
 - [Project Kanban Board](developer/KANBAN.md) - Current project status and roadmap
+- [GitHub Copilot Integration](developer/GITHUB_COPILOT.md) - GitHub Copilot integration for FTOC development
 - [CI/CD Pipeline](developer/CICD.md) - Continuous Integration and Deployment workflow
 - [Version Management Guide](developer/VERSION_MANAGEMENT.md) - How version numbers are managed
 - [Classpath Optimization Report](developer/CLASSPATH_OPTIMIZATION.md) - Performance optimization details

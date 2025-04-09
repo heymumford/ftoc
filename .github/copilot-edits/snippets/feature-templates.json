@@ -1,0 +1,147 @@
+{
+  "ftoc.snippets.feature": {
+    "version": "1.0.0",
+    "templates": [
+      {
+        "name": "basic-feature",
+        "description": "Basic feature template with essential elements",
+        "content": "@${priority} @${category} @Regression\nFeature: ${name}\n\n  ${description}\n\n  Background:\n    Given ${precondition}\n\n  Scenario: ${scenario_name}\n    Given ${given_step}\n    When ${when_step}\n    Then ${then_step}",
+        "variables": {
+          "priority": {
+            "type": "enum",
+            "options": ["P1", "P2", "P3"],
+            "default": "P2",
+            "description": "Priority level of the feature"
+          },
+          "category": {
+            "type": "enum",
+            "options": ["API", "UI", "Integration", "Unit", "Performance", "Security", "Accessibility"],
+            "default": "API",
+            "description": "Category of the feature"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the feature"
+          },
+          "description": {
+            "type": "text",
+            "description": "Description of the feature"
+          },
+          "precondition": {
+            "type": "string",
+            "description": "Precondition for all scenarios",
+            "default": "the system is ready for testing"
+          },
+          "scenario_name": {
+            "type": "string",
+            "description": "Name of the first scenario"
+          },
+          "given_step": {
+            "type": "string",
+            "description": "Given step for the scenario"
+          },
+          "when_step": {
+            "type": "string",
+            "description": "When step for the scenario"
+          },
+          "then_step": {
+            "type": "string",
+            "description": "Then step for the scenario"
+          }
+        }
+      },
+      {
+        "name": "scenario-outline",
+        "description": "Scenario outline template with examples table",
+        "content": "  Scenario Outline: ${name} with different inputs\n    Given ${given_step}\n    When ${when_step}\n    Then ${then_step}\n\n    Examples:\n      | ${param1} | ${param2} | ${result} |\n      | ${value1_1} | ${value1_2} | ${result1} |\n      | ${value2_1} | ${value2_2} | ${result2} |",
+        "variables": {
+          "name": {
+            "type": "string",
+            "description": "Name of the scenario outline"
+          },
+          "given_step": {
+            "type": "string",
+            "description": "Given step with parameters",
+            "default": "a user with <param1> and <param2>"
+          },
+          "when_step": {
+            "type": "string",
+            "description": "When step with parameters",
+            "default": "the action is performed"
+          },
+          "then_step": {
+            "type": "string",
+            "description": "Then step with parameters",
+            "default": "the result should be <result>"
+          },
+          "param1": {
+            "type": "string",
+            "description": "First parameter name",
+            "default": "param1"
+          },
+          "param2": {
+            "type": "string",
+            "description": "Second parameter name",
+            "default": "param2"
+          },
+          "result": {
+            "type": "string",
+            "description": "Result parameter name",
+            "default": "result"
+          },
+          "value1_1": {
+            "type": "string",
+            "description": "Value for param1 in example 1"
+          },
+          "value1_2": {
+            "type": "string",
+            "description": "Value for param2 in example 1"
+          },
+          "result1": {
+            "type": "string",
+            "description": "Expected result for example 1"
+          },
+          "value2_1": {
+            "type": "string",
+            "description": "Value for param1 in example 2"
+          },
+          "value2_2": {
+            "type": "string",
+            "description": "Value for param2 in example 2"
+          },
+          "result2": {
+            "type": "string",
+            "description": "Expected result for example 2"
+          }
+        }
+      },
+      {
+        "name": "api-feature",
+        "description": "API testing feature template",
+        "content": "@P1 @API @Regression\nFeature: ${api_name} API\n\n  Testing the ${api_name} API endpoints\n\n  Background:\n    Given the API service is running\n    And the authentication token is valid\n\n  Scenario: Get ${resource_name}\n    When a GET request is sent to \"/${endpoint}\"\n    Then the response status code should be 200\n    And the response should contain ${expected_fields}\n\n  Scenario: Create ${resource_name}\n    When a POST request is sent to \"/${endpoint}\" with the following data:\n      \"\"\"\n      {\n        ${request_body}\n      }\n      \"\"\"\n    Then the response status code should be 201\n    And the response should contain the created ${resource_name}",
+        "variables": {
+          "api_name": {
+            "type": "string",
+            "description": "Name of the API"
+          },
+          "resource_name": {
+            "type": "string",
+            "description": "Name of the resource being tested"
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "API endpoint path"
+          },
+          "expected_fields": {
+            "type": "string",
+            "description": "Fields expected in the response"
+          },
+          "request_body": {
+            "type": "text",
+            "description": "JSON request body for POST request"
+          }
+        }
+      }
+    ]
+  }
+}
