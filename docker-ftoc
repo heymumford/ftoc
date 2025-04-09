@@ -1,0 +1,3 @@
+#!/bin/bash
+# Simple wrapper script to run the Docker FTOC tool
+exec ./config/scripts/docker-ftoc.sh "$@"

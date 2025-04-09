@@ -31,6 +31,10 @@ This directory contains all documentation for the FTOC project.
 - [Architecture Decision Records (ADRs)](adr/README.md) - Key architecture decisions with context
 - [C4 Architecture Diagrams](c4/README.md) - System architecture visualizations
 
+### General Documentation
+
+- [Changelog](general/CHANGELOG.md) - History of changes to the project
+
 ## Additional Resources
 
 For the latest information, please see the [project README](../README.md) in the root directory.
