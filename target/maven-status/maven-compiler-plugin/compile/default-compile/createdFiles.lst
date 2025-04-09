@@ -1,9 +1,14 @@
 com/heymumford/ftoc/model/Scenario$Example.class
 com/heymumford/ftoc/formatter/TocFormatter$Format.class
-com/heymumford/ftoc/parser/FeatureParser.class
-com/heymumford/ftoc/formatter/ConcordanceFormatter.class
 com/heymumford/ftoc/model/Scenario.class
 com/heymumford/ftoc/FtocUtility.class
 com/heymumford/ftoc/formatter/TocFormatter.class
 com/heymumford/ftoc/formatter/ConcordanceFormatter$Format.class
 com/heymumford/ftoc/model/Feature.class
+com/heymumford/ftoc/analyzer/TagQualityAnalyzer$Warning.class
+com/heymumford/ftoc/analyzer/TagQualityAnalyzer.class
+com/heymumford/ftoc/parser/FeatureParser.class
+com/heymumford/ftoc/formatter/ConcordanceFormatter.class
+com/heymumford/ftoc/formatter/TagQualityFormatter$Format.class
+com/heymumford/ftoc/formatter/TagQualityFormatter.class
+com/heymumford/ftoc/analyzer/TagQualityAnalyzer$WarningType.class

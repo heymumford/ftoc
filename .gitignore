@@ -1,48 +1,96 @@
-# Compiled class file
+# Build artifacts
 *.class
+target/
+build/
+out/
+dist/
 
-# Log file
+# Logs and reports
 *.log
+logs/
+reports/
+test-output/
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
+# Package files
 *.jar
 *.war
-*.nar
 *.ear
 *.zip
 *.tar.gz
 *.rar
 
-# Maven build directory
-/target/
-
-# Eclipse project files
-.classpath
-.project
-.settings/
-
-# IntelliJ IDEA project files
+# IDE files and directories
 .idea/
 *.iml
 *.iws
-
-# VS Code settings
+*.ipr
+.classpath
+.project
+.settings/
 .vscode/
+.factorypath
+*.sublime-*
+nbproject/
+.nb-gradle/
+*.ctxt
+.jdt/
 
-# Temporary files
+# Temp files
 *.tmp
 *.temp
 *.swp
+*~
+.~*
+~*
+.*.swp
+.DS_Store
+Thumbs.db
+.directory
+.Trash-*
+*.bak
+*.orig
+tmp/
+temp/
 
-# Virtual machine crash logs
+# Maven 
+.mvn/
+dependency-reduced-pom.xml
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+buildNumber.properties
+.flattened-pom.xml
+
+# Java
+.mtj.tmp/
 hs_err_pid*
 replay_pid*
 
-# MacOS files
-.DS_Store
+# Coverage tools
+.coverage
+coverage/
+jacoco/
+.sonar/
+.scannerwork/
 
-# Windows system files
-Thumbs.db
+# Local configuration files
+*.local
+.env
+config/*.local
+config/local/
+
+# Node (if used for docs or tooling)
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm/
+
+# Gradle
+.gradle/
+build/
+
+# Miscellaneous
+*.patch
+*.diff

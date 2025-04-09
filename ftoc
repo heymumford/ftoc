@@ -1,0 +1,24 @@
+#!/bin/bash
+# Main entry point script for ftoc
+# This script finds the appropriate jar file and executes it
+
+set -e
+
+# Find the jar file
+JAR_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/target"
+
+if [ ! -d "$JAR_DIR" ]; then
+  echo "Error: Build directory not found. Run 'make build' first."
+  exit 1
+fi
+
+# Find the jar with dependencies
+JAR_FILE=$(find "$JAR_DIR" -name "ftoc-*-jar-with-dependencies.jar" | sort -r | head -n 1)
+
+if [ -z "$JAR_FILE" ]; then
+  echo "Error: Jar file not found. Run 'make build' first."
+  exit 1
+fi
+
+# Run the jar with all arguments passed to this script
+java -jar "$JAR_FILE" "$@"

@@ -1,26 +1,25 @@
-# FTOC Project Documentation
+# FTOC Documentation
 
-Welcome to the FTOC project documentation. This directory contains technical documentation, architecture diagrams, design decisions, and guides for the project.
+This directory contains all documentation for the FTOC project.
 
-## Table of Contents
+## Documentation Structure
+
+### User Documentation
+
+- [Usage Guide](user/usage.md) - Guide for end users on how to use FTOC
+
+### Developer Documentation
+
+- [Project Kanban Board](developer/KANBAN.md) - Current project status and roadmap
+- [Version Management Guide](developer/VERSION_MANAGEMENT.md) - How version numbers are managed
+- [Classpath Optimization Report](developer/CLASSPATH_OPTIMIZATION.md) - Performance optimization details
+- [Claude AI Assistant Guide](developer/CLAUDE.md) - Working with Claude on this project
 
 ### Architecture Documentation
 
-- [Architecture Decision Records (ADRs)](adr/README.md)
-- [C4 Architecture Diagrams](c4/README.md)
+- [Architecture Decision Records (ADRs)](adr/README.md) - Key architecture decisions with context
+- [C4 Architecture Diagrams](c4/README.md) - System architecture visualizations
 
-### Project Documentation
+## Additional Resources
 
-- [Version Management Guide](VERSION_MANAGEMENT.md)
-- [Kanban Board](KANBAN.md)
-- [Classpath Optimization Report](CLASSPATH_OPTIMIZATION.md)
-
-### Development
-
-- [Claude AI Assistant Guide](CLAUDE.md)
-
-## About FTOC
-
-FTOC (Feature Table of Contents) is a utility that analyzes Cucumber feature files to create documentation and perform quality checks, helping development teams maintain consistent BDD practices.
-
-See the [main README](../README.md) for more information about the project, how to use it, and its features.
+For the latest information, please see the [project README](../README.md) in the root directory.
