@@ -11,6 +11,8 @@ BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 RED='\033[0;31m'
+CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
 RESET='\033[0m'
 BOLD='\033[1m'
 
@@ -30,6 +32,7 @@ display_usage() {
     echo
     echo -e "${BOLD}Commands:${RESET}"
     echo -e "  ${GREEN}get${RESET}         Display current version"
+    echo -e "  ${GREEN}summary${RESET}     Display detailed version and build information"
     echo -e "  ${GREEN}patch${RESET}       Increment patch version (x.y.Z)"
     echo -e "  ${GREEN}minor${RESET}       Increment minor version (x.Y.0)"
     echo -e "  ${GREEN}major${RESET}       Increment major version (X.0.0)"
@@ -41,6 +44,50 @@ display_usage() {
 # Get current version from POM file (single source of truth)
 get_current_version() {
     xmlstarlet sel -N pom="http://maven.apache.org/POM/4.0.0" -t -v "/pom:project/pom:version" pom.xml
+}
+
+# Get build number (using git commit count)
+get_build_number() {
+    git rev-list --count HEAD
+}
+
+# Get git hash
+get_git_hash() {
+    git rev-parse --short HEAD
+}
+
+# Get git branch
+get_git_branch() {
+    git rev-parse --abbrev-ref HEAD
+}
+
+# Get timestamp
+get_timestamp() {
+    date "+%Y-%m-%d %H:%M:%S"
+}
+
+# Display detailed summary
+display_summary() {
+    local version=$(get_current_version)
+    local build=$(get_build_number)
+    local hash=$(get_git_hash)
+    local branch=$(get_git_branch)
+    local timestamp=$(get_timestamp)
+    local tag=$(git describe --tags --exact-match 2>/dev/null || echo "None")
+    
+    echo -e "${BOLD}┌─ Version Information ────────────────────────────────────┐${RESET}"
+    echo -e "${BOLD}│${RESET} "
+    echo -e "${BOLD}│${RESET} ${CYAN}Version:${RESET}     ${BOLD}${version}${RESET}"
+    echo -e "${BOLD}│${RESET} ${CYAN}Build:${RESET}       ${build}"
+    echo -e "${BOLD}│${RESET} ${CYAN}Full ID:${RESET}     ${version}.${build}"
+    echo -e "${BOLD}│${RESET} "
+    echo -e "${BOLD}│${RESET} ${MAGENTA}Git Branch:${RESET}  ${branch}"
+    echo -e "${BOLD}│${RESET} ${MAGENTA}Git Commit:${RESET}  ${hash}"
+    echo -e "${BOLD}│${RESET} ${MAGENTA}Git Tag:${RESET}     ${tag}"
+    echo -e "${BOLD}│${RESET} "
+    echo -e "${BOLD}│${RESET} ${YELLOW}Timestamp:${RESET}   ${timestamp}"
+    echo -e "${BOLD}│${RESET} "
+    echo -e "${BOLD}└───────────────────────────────────────────────────────────┘${RESET}"
 }
 
 # Update version in all required files
@@ -145,12 +192,20 @@ main() {
     case $command in
         get)
             echo -e "${BOLD}Current version:${RESET} $current_version"
+            echo -e "${BOLD}Build number:${RESET}   $(get_build_number)"
+            echo -e "${BOLD}Full ID:${RESET}        $current_version.$(get_build_number)"
+            ;;
+        summary)
+            display_summary
             ;;
         patch)
             local new_version=$(increment_version "$current_version" "patch")
             update_version "$new_version"
             run_tests
             tag_version "$new_version"
+            # Display summary after update
+            echo -e "\n${BOLD}Updated Version Summary:${RESET}"
+            display_summary
             ;;
         minor)
             local new_version=$(increment_version "$current_version" "minor")
@@ -158,6 +213,9 @@ main() {
             run_tests
             run_actions_workflow
             tag_version "$new_version"
+            # Display summary after update
+            echo -e "\n${BOLD}Updated Version Summary:${RESET}"
+            display_summary
             ;;
         major)
             local new_version=$(increment_version "$current_version" "major")
@@ -165,6 +223,9 @@ main() {
             run_tests
             run_actions_workflow
             tag_version "$new_version"
+            # Display summary after update
+            echo -e "\n${BOLD}Updated Version Summary:${RESET}"
+            display_summary
             ;;
         set)
             local new_version=$2
@@ -177,6 +238,9 @@ main() {
             update_version "$new_version"
             run_tests
             tag_version "$new_version"
+            # Display summary after update
+            echo -e "\n${BOLD}Updated Version Summary:${RESET}"
+            display_summary
             ;;
         help|*)
             display_usage
