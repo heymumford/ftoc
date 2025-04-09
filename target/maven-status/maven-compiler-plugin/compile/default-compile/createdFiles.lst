@@ -1,7 +1,9 @@
 com/heymumford/ftoc/model/Scenario$Example.class
 com/heymumford/ftoc/formatter/TocFormatter$Format.class
 com/heymumford/ftoc/parser/FeatureParser.class
+com/heymumford/ftoc/formatter/ConcordanceFormatter.class
 com/heymumford/ftoc/model/Scenario.class
 com/heymumford/ftoc/FtocUtility.class
 com/heymumford/ftoc/formatter/TocFormatter.class
+com/heymumford/ftoc/formatter/ConcordanceFormatter$Format.class
 com/heymumford/ftoc/model/Feature.class

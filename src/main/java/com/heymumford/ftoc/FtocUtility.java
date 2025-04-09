@@ -1,5 +1,6 @@
 package com.heymumford.ftoc;
 
+import com.heymumford.ftoc.formatter.ConcordanceFormatter;
 import com.heymumford.ftoc.formatter.TocFormatter;
 import com.heymumford.ftoc.model.Feature;
 import com.heymumford.ftoc.parser.FeatureParser;
@@ -26,8 +27,10 @@ public class FtocUtility {
     private final Map<String, Integer> tagConcordance;
     private final List<Feature> parsedFeatures;
     private final FeatureParser parser;
-    private final TocFormatter formatter;
+    private final TocFormatter tocFormatter;
+    private final ConcordanceFormatter concordanceFormatter;
     private TocFormatter.Format outputFormat;
+    private ConcordanceFormatter.Format concordanceFormat;
     private final List<String> includeTagFilters;
     private final List<String> excludeTagFilters;
 
@@ -36,8 +39,10 @@ public class FtocUtility {
         this.tagConcordance = new HashMap<>();
         this.parsedFeatures = new ArrayList<>();
         this.parser = new FeatureParser();
-        this.formatter = new TocFormatter();
+        this.tocFormatter = new TocFormatter();
+        this.concordanceFormatter = new ConcordanceFormatter();
         this.outputFormat = TocFormatter.Format.PLAIN_TEXT; // Default format
+        this.concordanceFormat = ConcordanceFormatter.Format.PLAIN_TEXT; // Default format
         this.includeTagFilters = new ArrayList<>();
         this.excludeTagFilters = new ArrayList<>();
     }
@@ -49,6 +54,11 @@ public class FtocUtility {
     public void setOutputFormat(TocFormatter.Format format) {
         this.outputFormat = format;
         logger.debug("Output format set to: {}", format);
+    }
+    
+    public void setConcordanceFormat(ConcordanceFormatter.Format format) {
+        this.concordanceFormat = format;
+        logger.debug("Concordance format set to: {}", format);
     }
     
     /**
@@ -89,7 +99,22 @@ public class FtocUtility {
         logger.debug("Cleared all tag filters");
     }
 
+    /**
+     * Process a directory of feature files and generate reports.
+     * 
+     * @param directoryPath Path to the directory containing feature files
+     */
     public void processDirectory(String directoryPath) {
+        processDirectory(directoryPath, false);
+    }
+    
+    /**
+     * Process a directory of feature files and generate reports.
+     * 
+     * @param directoryPath Path to the directory containing feature files
+     * @param generateConcordanceOnly If true, only generate the concordance report, not the TOC
+     */
+    public void processDirectory(String directoryPath, boolean generateConcordanceOnly) {
         try {
             Path directory = Paths.get(directoryPath);
             if (Files.notExists(directory) || !Files.isDirectory(directory)) {
@@ -117,7 +142,11 @@ public class FtocUtility {
             
             // Generate reports
             generateConcordanceReport();
-            generateTableOfContents();
+            
+            // Generate TOC only if not in concordance-only mode
+            if (!generateConcordanceOnly) {
+                generateTableOfContents();
+            }
             
             logger.info("FTOC utility finished successfully.");
         } catch (IOException e) {
@@ -153,7 +182,17 @@ public class FtocUtility {
 
     private void generateConcordanceReport() {
         logger.info("Generating tag concordance report...");
+        
+        // Log basic stats to the logger (for backward compatibility)
         tagConcordance.forEach((tag, count) -> logger.info("Tag: {}, Count: {}", tag, count));
+        
+        // Generate detailed report using the formatter
+        String report = concordanceFormatter.generateConcordanceReport(
+                tagConcordance, parsedFeatures, concordanceFormat);
+        
+        // Output the report to the console
+        System.out.println("\n" + report);
+        
         logger.info("Concordance report generated successfully.");
     }
     
@@ -170,9 +209,9 @@ public class FtocUtility {
         if (!includeTagFilters.isEmpty() || !excludeTagFilters.isEmpty()) {
             logger.info("Applying tag filters - include: {}, exclude: {}", 
                     includeTagFilters, excludeTagFilters);
-            toc = formatter.generateToc(parsedFeatures, outputFormat, includeTagFilters, excludeTagFilters);
+            toc = tocFormatter.generateToc(parsedFeatures, outputFormat, includeTagFilters, excludeTagFilters);
         } else {
-            toc = formatter.generateToc(parsedFeatures, outputFormat);
+            toc = tocFormatter.generateToc(parsedFeatures, outputFormat);
         }
         
         System.out.println("\n" + toc);
@@ -194,14 +233,17 @@ public class FtocUtility {
     
     private static void printHelp() {
         System.out.println("FTOC Utility version " + VERSION);
-        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--version | -v] [--help]");
+        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--concordance-format <format>] [--version | -v] [--help]");
         System.out.println("Options:");
         System.out.println("  -d <directory>      Specify the directory to analyze (default: current directory)");
-        System.out.println("  -f <format>         Specify output format (text, md, html, json) (default: text)");
+        System.out.println("  -f <format>         Specify TOC output format (text, md, html, json) (default: text)");
         System.out.println("  --tags <tags>       Include only scenarios with at least one of these tags");
         System.out.println("                      Comma-separated list, e.g. \"@P0,@Smoke\"");
         System.out.println("  --exclude-tags <tags> Exclude scenarios with any of these tags");
         System.out.println("                      Comma-separated list, e.g. \"@Flaky,@Debug\"");
+        System.out.println("  --concordance       Generate detailed tag concordance report instead of TOC");
+        System.out.println("  --concordance-format <format>");
+        System.out.println("                      Specify concordance output format (text, md, html, json) (default: text)");
         System.out.println("  --version, -v       Display version information");
         System.out.println("  --help              Display this help message");
     }
@@ -218,7 +260,9 @@ public class FtocUtility {
         }
 
         String directoryPath = ".";
-        TocFormatter.Format format = TocFormatter.Format.PLAIN_TEXT;
+        TocFormatter.Format tocFormat = TocFormatter.Format.PLAIN_TEXT;
+        ConcordanceFormatter.Format concordanceFormat = ConcordanceFormatter.Format.PLAIN_TEXT;
+        boolean generateConcordanceOnly = false;
         
         FtocUtility ftoc = new FtocUtility();
         ftoc.initialize();
@@ -230,15 +274,29 @@ public class FtocUtility {
             } else if ("-f".equals(args[i]) && i + 1 < args.length) {
                 String formatStr = args[i + 1].toLowerCase();
                 if ("md".equals(formatStr) || "markdown".equals(formatStr)) {
-                    format = TocFormatter.Format.MARKDOWN;
+                    tocFormat = TocFormatter.Format.MARKDOWN;
                 } else if ("html".equals(formatStr)) {
-                    format = TocFormatter.Format.HTML;
+                    tocFormat = TocFormatter.Format.HTML;
                 } else if ("json".equals(formatStr)) {
-                    format = TocFormatter.Format.JSON;
+                    tocFormat = TocFormatter.Format.JSON;
                 } else {
-                    format = TocFormatter.Format.PLAIN_TEXT;
+                    tocFormat = TocFormatter.Format.PLAIN_TEXT;
                 }
                 i++; // Skip the next argument
+            } else if ("--concordance-format".equals(args[i]) && i + 1 < args.length) {
+                String formatStr = args[i + 1].toLowerCase();
+                if ("md".equals(formatStr) || "markdown".equals(formatStr)) {
+                    concordanceFormat = ConcordanceFormatter.Format.MARKDOWN;
+                } else if ("html".equals(formatStr)) {
+                    concordanceFormat = ConcordanceFormatter.Format.HTML;
+                } else if ("json".equals(formatStr)) {
+                    concordanceFormat = ConcordanceFormatter.Format.JSON;
+                } else {
+                    concordanceFormat = ConcordanceFormatter.Format.PLAIN_TEXT;
+                }
+                i++; // Skip the next argument
+            } else if ("--concordance".equals(args[i])) {
+                generateConcordanceOnly = true;
             } else if ("--tags".equals(args[i]) && i + 1 < args.length) {
                 String[] tags = args[i + 1].split(",");
                 for (String tag : tags) {
@@ -254,7 +312,10 @@ public class FtocUtility {
             }
         }
         
-        ftoc.setOutputFormat(format);
-        ftoc.processDirectory(directoryPath);
+        ftoc.setOutputFormat(tocFormat);
+        ftoc.setConcordanceFormat(concordanceFormat);
+        
+        // Process the directory and generate concordance data
+        ftoc.processDirectory(directoryPath, generateConcordanceOnly);
     }
 }

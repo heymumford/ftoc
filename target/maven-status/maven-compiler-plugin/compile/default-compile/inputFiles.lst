@@ -1,5 +1,6 @@
 /home/emumford/NativeLinuxProjects/ftoc/src/main/java/com/heymumford/ftoc/model/Feature.java
 /home/emumford/NativeLinuxProjects/ftoc/src/main/java/com/heymumford/ftoc/parser/FeatureParser.java
 /home/emumford/NativeLinuxProjects/ftoc/src/main/java/com/heymumford/ftoc/formatter/TocFormatter.java
+/home/emumford/NativeLinuxProjects/ftoc/src/main/java/com/heymumford/ftoc/formatter/ConcordanceFormatter.java
 /home/emumford/NativeLinuxProjects/ftoc/src/main/java/com/heymumford/ftoc/model/Scenario.java
 /home/emumford/NativeLinuxProjects/ftoc/src/main/java/com/heymumford/ftoc/FtocUtility.java
