@@ -1,0 +1,29 @@
+{
+  "types": [
+    {"type": "feat", "section": "Features"},
+    {"type": "fix", "section": "Bug Fixes"},
+    {"type": "docs", "section": "Documentation"},
+    {"type": "style", "section": "Styling"},
+    {"type": "refactor", "section": "Code Refactoring"},
+    {"type": "perf", "section": "Performance Improvements"},
+    {"type": "test", "section": "Tests"},
+    {"type": "build", "section": "Build System"},
+    {"type": "ci", "section": "CI/CD"},
+    {"type": "chore", "section": "Chores"},
+    {"type": "revert", "section": "Reverts"},
+    {"type": "security", "section": "Security"}
+  ],
+  "commitUrlFormat": "https://github.com/heymumford/ftoc/commit/{{hash}}",
+  "compareUrlFormat": "https://github.com/heymumford/ftoc/compare/{{previousTag}}...{{currentTag}}",
+  "issueUrlFormat": "https://github.com/heymumford/ftoc/issues/{{id}}",
+  "releaseCommitMessageFormat": "chore(release): {{currentTag}} [skip ci]",
+  "bumpFiles": [
+    {
+      "filename": "pom.xml",
+      "updater": {
+        "readVersion": "xpath://project/version/text()",
+        "writeVersion": "sed-match:<version>.*</version>"
+      }
+    }
+  ]
+}
