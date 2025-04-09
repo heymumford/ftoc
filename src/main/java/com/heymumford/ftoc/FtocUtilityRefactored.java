@@ -305,7 +305,7 @@ public class FtocUtilityRefactored {
             Map<String, Integer> tagConcordance = processor.generateTagConcordance(features);
             
             // Create report context object for plugin events
-            ReportContext reportContext = new ReportContext(
+            com.heymumford.ftoc.plugin.ReportContext reportContext = new com.heymumford.ftoc.plugin.ReportContext(
                 features, tagConcordance, outputFormat, includeTagFilters, excludeTagFilters,
                 analyzeTagQuality, detectAntiPatterns, generateConcordanceOnly
             );
@@ -513,8 +513,8 @@ public class FtocUtilityRefactored {
         }
         
         // Create command line context for plugins
-        CommandLineContext cmdContext = new CommandLineContext(
-            directory, concordanceOnly, ftoc.getOutputFormat(),
+        com.heymumford.ftoc.plugin.CommandLineContext cmdContext = new com.heymumford.ftoc.plugin.CommandLineContext(
+            directory, concordanceOnly, ftoc.outputFormat,
             ftoc.includeTagFilters, ftoc.excludeTagFilters,
             ftoc.analyzeTagQuality, ftoc.detectAntiPatterns,
             ftoc.enablePerformanceMonitoring

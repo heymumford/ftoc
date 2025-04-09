@@ -33,8 +33,8 @@ public class JUnitReportStepDefs {
         logger.info("Enabled anti-pattern detection");
     }
     
-    @When("I set anti-pattern format to {string}")
-    public void setAntiPatternFormat(String format) {
+    @When("I set JUnit anti-pattern format to {string}")
+    public void setJUnitAntiPatternFormat(String format) {
         FtocUtility ftoc = ftocStepDefs.getFtocUtility();
         AntiPatternFormatter.Format antiPatternFormat;
         switch (format.toLowerCase()) {
@@ -99,8 +99,8 @@ public class JUnitReportStepDefs {
         }
     }
     
-    @Then("an anti-pattern report should be generated")
-    public void verifyAntiPatternReportGenerated() {
+    @Then("a JUnit anti-pattern report should be generated")
+    public void verifyJUnitAntiPatternReportGenerated() {
         String capturedOutput = ftocStepDefs.getCapturedOutput();
         assertNotNull(capturedOutput, "No output was captured");
         
