@@ -1,5 +1,7 @@
 # ftoc - Feature Table of Contents Utility
 
+FTOC solves the challenge of managing large Cucumber test suites by automatically analyzing feature files to improve discoverability, ensure tag consistency, and maintain quality. It generates structured documentation, comprehensive tag analysis with visualizations, and quality metrics that help teams effectively organize their BDD tests. With cross-language support and CI/CD integration, FTOC bridges the gap between test authoring and maintainable, discoverable test documentation.
+
 [![Version](https://img.shields.io/badge/version-0.5.3-brightgreen.svg)](https://github.com/heymumford/ftoc/releases/tag/v0.5.3)
 [![Build](https://img.shields.io/badge/build-12-blue.svg)](https://github.com/heymumford/ftoc/actions)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
@@ -8,21 +10,24 @@
 [![Karate](https://img.shields.io/badge/karate-integrated-yellow.svg)](https://github.com/karatelabs/karate)
 [![Coverage](.github/badges/coverage.svg)](.github/badges/jacoco.csv)
 
-A command-line utility for Cucumber feature file analysis, documentation, and quality assurance.
-
 ## Overview
 
-`ftoc` analyzes Cucumber feature files to create documentation and perform quality checks, helping development teams maintain consistent BDD practices. It works with all Cucumber-compatible implementations (Java, JavaScript, Ruby, Karate).
+`ftoc` analyzes Cucumber feature files to create documentation and perform quality checks, helping development teams maintain consistent BDD practices. It works with all Cucumber-compatible implementations (Java, JavaScript, Ruby, Karate) and provides sophisticated analytics to understand your test suite organization.
 
 ## Key Features
 
 - **Table of Contents Generation:** Creates structured TOC of all scenarios and scenario outlines
-- **Tag Concordance:** Counts and analyzes tag usage across feature files
+- **Advanced Tag Analytics:** 
+  - Tag occurrence metrics and co-occurrence analysis
+  - Trend detection for rising and declining tag usage
+  - Statistical significance indicators
+  - D3.js visualizations of tag relationships
 - **Quality Assurance:** Flags missing tags or use of low-value generic tags
 - **Cross-Language Support:** Works with feature files in any Cucumber implementation, including Karate
 - **Karate Support:** Specialized analysis of Karate API test files
 - **CI/CD Integration:** Generates JUnit XML reports for integration with CI systems
 - **Test Pyramid Integration:** System testing with Karate for robust CLI validation
+- **Multi-Format Output:** Plain text, Markdown, HTML, and JSON reporting
 
 ## Who Is This For?
 
@@ -88,6 +93,7 @@ Managing large suites of Cucumber tests presents challenges:
 
 - [Usage Guide](docs/user/usage.md)
 - [Tag Best Practices](docs/user/tag-best-practices.md)
+- [Tag Concordance Report](docs/user/tag-concordance.md)
 - [JUnit Report Integration](docs/user/junit-report-integration.md)
 - [Docker Usage](docs/user/docker-usage.md)
 - [Cross-Platform Usage](docs/user/cross-platform.md)
