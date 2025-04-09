@@ -1,6 +1,10 @@
 # ftoc - Feature Table of Contents Utility
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.5.1-brightgreen.svg)](https://github.com/heymumford/ftoc/releases/tag/v0.5.1)
+[![Build](https://img.shields.io/badge/build-12-blue.svg)](https://github.com/heymumford/ftoc/actions)
+[![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
+[![Java Version](https://img.shields.io/badge/java-11+-orange.svg)](https://openjdk.java.net/)
+[![Cucumber](https://img.shields.io/badge/cucumber-compatible-green.svg)](https://cucumber.io/)
 
 A command-line utility for Cucumber feature file analysis, documentation, and quality assurance.
 
@@ -46,10 +50,10 @@ java -jar target/ftoc-<version>-jar-with-dependencies.jar [OPTIONS]
 
 ```bash
 # Analyze all feature files in a specific directory
-java -jar target/ftoc-1.0.7-jar-with-dependencies.jar -d src/test/resources/features
+java -jar target/ftoc-0.5.1-jar-with-dependencies.jar -d src/test/resources/features
 
 # Get version information
-java -jar target/ftoc-1.0.7-jar-with-dependencies.jar --version
+java -jar target/ftoc-0.5.1-jar-with-dependencies.jar --version
 ```
 
 ## Programmatic Usage
@@ -72,6 +76,17 @@ Managing large suites of Cucumber tests presents challenges:
 - **Quality Control:** Avoiding generic, unhelpful tagging patterns
 
 `ftoc` addresses these challenges with automated analysis and reporting tools.
+
+## Version Management
+
+FTOC uses semantic versioning (MAJOR.MINOR.PATCH) combined with build numbers for precise tracking:
+
+```bash
+# Display version information
+./version.sh summary
+```
+
+See [VERSION_MANAGEMENT.md](VERSION_MANAGEMENT.md) for details on the versioning system.
 
 ## License
 
