@@ -1,7 +1,6 @@
 # FTOC Development Kanban Board
 
 ## Backlog
-- [ ] Add detection and warnings for common anti-patterns in feature files
 - [ ] Implement configuration file support for customizable warnings
 - [ ] Expand test suite with more complex feature file examples
 - [ ] Create documentation for tag best practices
@@ -61,3 +60,4 @@
 - [x] Project directory reorganization and cleanup
 - [x] Add command line option for output format (plain text, markdown, HTML, JSON)
 - [x] Add command line option for filtering scenarios by tag
+- [x] Add detection and warnings for common anti-patterns in feature files

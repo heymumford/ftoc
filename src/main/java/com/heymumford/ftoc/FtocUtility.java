@@ -1,6 +1,8 @@
 package com.heymumford.ftoc;
 
+import com.heymumford.ftoc.analyzer.FeatureAntiPatternAnalyzer;
 import com.heymumford.ftoc.analyzer.TagQualityAnalyzer;
+import com.heymumford.ftoc.formatter.AntiPatternFormatter;
 import com.heymumford.ftoc.formatter.ConcordanceFormatter;
 import com.heymumford.ftoc.formatter.TagQualityFormatter;
 import com.heymumford.ftoc.formatter.TocFormatter;
@@ -32,12 +34,15 @@ public class FtocUtility {
     private final TocFormatter tocFormatter;
     private final ConcordanceFormatter concordanceFormatter;
     private final TagQualityFormatter tagQualityFormatter;
+    private final AntiPatternFormatter antiPatternFormatter;
     private TocFormatter.Format outputFormat;
     private ConcordanceFormatter.Format concordanceFormat;
     private TagQualityFormatter.Format tagQualityFormat;
+    private AntiPatternFormatter.Format antiPatternFormat;
     private final List<String> includeTagFilters;
     private final List<String> excludeTagFilters;
     private boolean analyzeTagQuality;
+    private boolean detectAntiPatterns;
 
     public FtocUtility() {
         this.featureFiles = new ArrayList<>();
@@ -47,12 +52,15 @@ public class FtocUtility {
         this.tocFormatter = new TocFormatter();
         this.concordanceFormatter = new ConcordanceFormatter();
         this.tagQualityFormatter = new TagQualityFormatter();
+        this.antiPatternFormatter = new AntiPatternFormatter();
         this.outputFormat = TocFormatter.Format.PLAIN_TEXT; // Default format
         this.concordanceFormat = ConcordanceFormatter.Format.PLAIN_TEXT; // Default format
         this.tagQualityFormat = TagQualityFormatter.Format.PLAIN_TEXT; // Default format
+        this.antiPatternFormat = AntiPatternFormatter.Format.PLAIN_TEXT; // Default format
         this.includeTagFilters = new ArrayList<>();
         this.excludeTagFilters = new ArrayList<>();
         this.analyzeTagQuality = false;
+        this.detectAntiPatterns = false;
     }
 
     public void initialize() {
@@ -77,6 +85,16 @@ public class FtocUtility {
     public void setAnalyzeTagQuality(boolean analyze) {
         this.analyzeTagQuality = analyze;
         logger.debug("Tag quality analysis set to: {}", analyze);
+    }
+    
+    public void setDetectAntiPatterns(boolean detect) {
+        this.detectAntiPatterns = detect;
+        logger.debug("Anti-pattern detection set to: {}", detect);
+    }
+    
+    public void setAntiPatternFormat(AntiPatternFormatter.Format format) {
+        this.antiPatternFormat = format;
+        logger.debug("Anti-pattern format set to: {}", format);
     }
     
     /**
@@ -166,6 +184,11 @@ public class FtocUtility {
                 generateTagQualityReport();
             }
             
+            // Generate anti-pattern report if requested
+            if (detectAntiPatterns) {
+                generateAntiPatternReport();
+            }
+            
             // Generate TOC only if not in concordance-only mode
             if (!generateConcordanceOnly) {
                 generateTableOfContents();
@@ -242,6 +265,29 @@ public class FtocUtility {
         logger.info("Tag quality analysis found {} potential issues.", warnings.size());
     }
     
+    private void generateAntiPatternReport() {
+        logger.info("Generating feature anti-pattern report...");
+        
+        if (parsedFeatures.isEmpty()) {
+            logger.warn("No features to analyze for anti-patterns.");
+            return;
+        }
+        
+        // Create an anti-pattern analyzer with the current features
+        FeatureAntiPatternAnalyzer analyzer = new FeatureAntiPatternAnalyzer(parsedFeatures);
+        
+        // Perform the analysis
+        List<FeatureAntiPatternAnalyzer.Warning> warnings = analyzer.analyzeAntiPatterns();
+        
+        // Generate a report using the formatter
+        String report = antiPatternFormatter.generateAntiPatternReport(warnings, antiPatternFormat);
+        
+        // Output the report to the console
+        System.out.println("\n" + report);
+        
+        logger.info("Anti-pattern analysis found {} potential issues.", warnings.size());
+    }
+    
     private void generateTableOfContents() {
         if (parsedFeatures.isEmpty()) {
             logger.warn("No features to include in table of contents.");
@@ -279,7 +325,7 @@ public class FtocUtility {
     
     private static void printHelp() {
         System.out.println("FTOC Utility version " + VERSION);
-        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--concordance-format <format>] [--analyze-tags] [--tag-quality-format <format>] [--format <format>] [--version | -v] [--help]");
+        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--concordance-format <format>] [--analyze-tags] [--tag-quality-format <format>] [--detect-anti-patterns] [--anti-pattern-format <format>] [--format <format>] [--version | -v] [--help]");
         System.out.println("Options:");
         System.out.println("  -d <directory>      Specify the directory to analyze (default: current directory)");
         System.out.println("  -f <format>         Specify TOC output format (text, md, html, json) (default: text)");
@@ -296,6 +342,10 @@ public class FtocUtility {
         System.out.println("  --analyze-tags      Perform tag quality analysis and generate warnings report");
         System.out.println("  --tag-quality-format <format>");
         System.out.println("                      Specify tag quality report format (text, md, html, json) (default: text)");
+        System.out.println("  --detect-anti-patterns");
+        System.out.println("                      Detect common anti-patterns in feature files and generate warnings");
+        System.out.println("  --anti-pattern-format <format>");
+        System.out.println("                      Specify anti-pattern report format (text, md, html, json) (default: text)");
         System.out.println("  --version, -v       Display version information");
         System.out.println("  --help              Display this help message");
     }
@@ -315,8 +365,10 @@ public class FtocUtility {
         TocFormatter.Format tocFormat = TocFormatter.Format.PLAIN_TEXT;
         ConcordanceFormatter.Format concordanceFormat = ConcordanceFormatter.Format.PLAIN_TEXT;
         TagQualityFormatter.Format tagQualityFormat = TagQualityFormatter.Format.PLAIN_TEXT;
+        AntiPatternFormatter.Format antiPatternFormat = AntiPatternFormatter.Format.PLAIN_TEXT;
         boolean generateConcordanceOnly = false;
         boolean analyzeTagQuality = false;
+        boolean detectAntiPatterns = false;
         
         FtocUtility ftoc = new FtocUtility();
         ftoc.initialize();
@@ -343,6 +395,7 @@ public class FtocUtility {
                 tocFormat = selectedFormat;
                 concordanceFormat = ConcordanceFormatter.Format.valueOf(selectedFormat.name());
                 tagQualityFormat = TagQualityFormatter.Format.valueOf(selectedFormat.name());
+                antiPatternFormat = AntiPatternFormatter.Format.valueOf(selectedFormat.name());
                 
                 i++; // Skip the next argument
             } else if ("--concordance-format".equals(args[i]) && i + 1 < args.length) {
@@ -373,6 +426,20 @@ public class FtocUtility {
                     tagQualityFormat = TagQualityFormatter.Format.PLAIN_TEXT;
                 }
                 i++; // Skip the next argument
+            } else if ("--detect-anti-patterns".equals(args[i])) {
+                detectAntiPatterns = true;
+            } else if ("--anti-pattern-format".equals(args[i]) && i + 1 < args.length) {
+                String formatStr = args[i + 1].toLowerCase();
+                if ("md".equals(formatStr) || "markdown".equals(formatStr)) {
+                    antiPatternFormat = AntiPatternFormatter.Format.MARKDOWN;
+                } else if ("html".equals(formatStr)) {
+                    antiPatternFormat = AntiPatternFormatter.Format.HTML;
+                } else if ("json".equals(formatStr)) {
+                    antiPatternFormat = AntiPatternFormatter.Format.JSON;
+                } else {
+                    antiPatternFormat = AntiPatternFormatter.Format.PLAIN_TEXT;
+                }
+                i++; // Skip the next argument
             } else if ("--tags".equals(args[i]) && i + 1 < args.length) {
                 String[] tags = args[i + 1].split(",");
                 for (String tag : tags) {
@@ -391,7 +458,9 @@ public class FtocUtility {
         ftoc.setOutputFormat(tocFormat);
         ftoc.setConcordanceFormat(concordanceFormat);
         ftoc.setTagQualityFormat(tagQualityFormat);
+        ftoc.setAntiPatternFormat(antiPatternFormat);
         ftoc.setAnalyzeTagQuality(analyzeTagQuality);
+        ftoc.setDetectAntiPatterns(detectAntiPatterns);
         
         // Process the directory and generate concordance data
         ftoc.processDirectory(directoryPath, generateConcordanceOnly);
