@@ -3,7 +3,28 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.heymumford.ftoc</groupId>
   <artifactId>ftoc</artifactId>
-  <version>0.5.1</version>
+  <version>0.5.2</version>
+  <name>FTOC - Feature Table of Contents Utility</name>
+  <description>A command-line utility for Cucumber feature file analysis, documentation, and quality assurance</description>
+  <url>https://github.com/heymumford/ftoc</url>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+    </license>
+  </licenses>
+  <scm>
+    <connection>scm:git:git://github.com/heymumford/ftoc.git</connection>
+    <developerConnection>scm:git:ssh://github.com:heymumford/ftoc.git</developerConnection>
+    <url>https://github.com/heymumford/ftoc</url>
+  </scm>
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/heymumford/ftoc</url>
+    </repository>
+  </distributionManagement>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>11</maven.compiler.release>
@@ -36,6 +57,11 @@
       <artifactId>slf4j-simple</artifactId>
       <version>${slf4j.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>2.0</version>
+    </dependency>
     <!-- Test Dependencies -->
     <dependency>
       <groupId>io.cucumber</groupId>
@@ -53,6 +79,13 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <version>${junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- Karate Dependencies for API/CLI testing -->
+    <dependency>
+      <groupId>com.intuit.karate</groupId>
+      <artifactId>karate-junit5</artifactId>
+      <version>1.4.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -119,6 +152,30 @@
             <include>**/*Tests.java</include>
             <include>**/Test*.java</include>
           </includes>
+          <systemProperties>
+            <karate.options>--tags ~@ignore</karate.options>
+          </systemProperties>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven.surefire.plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <includes>
+            <include>karate/KarateRunner.java</include>
+          </includes>
+          <systemProperties>
+            <karate.env>test</karate.env>
+          </systemProperties>
         </configuration>
       </plugin>
       <plugin>
@@ -133,6 +190,107 @@
             </goals>
             <configuration>
               <outputFile>${project.build.outputDirectory}/ftoc-version.properties</outputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Plugin to copy JUnit XML reports to target directory for CI integration -->
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>create-junit-report-dir</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <mkdir dir="${project.build.directory}/junit-reports"/>
+              </target>
+            </configuration>
+          </execution>
+          <!-- Execute XML cleanup script -->
+          <execution>
+            <id>xml-cleanup</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <echo message="Running XML cleanup script..."/>
+                <exec executable="${project.basedir}/config/scripts/xml-cleanup.sh" failonerror="false"/>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Add deploy plugin for GitHub Packages -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <altDeploymentRepository>github::default::https://maven.pkg.github.com/heymumford/ftoc</altDeploymentRepository>
+        </configuration>
+      </plugin>
+      
+      <!-- OWASP Dependency Check for security vulnerabilities -->
+      <plugin>
+        <groupId>org.owasp</groupId>
+        <artifactId>dependency-check-maven</artifactId>
+        <version>8.2.1</version>
+        <configuration>
+          <formats>
+            <format>HTML</format>
+            <format>XML</format>
+            <format>JSON</format>
+          </formats>
+          <failBuildOnCVSS>9</failBuildOnCVSS> <!-- Only fail on critical vulnerabilities -->
+          <suppressionFile>${project.basedir}/config/dependency-check-suppressions.xml</suppressionFile>
+          <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+        </configuration>
+      </plugin>
+      
+      <!-- JaCoCo plugin for code coverage -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.10</version>
+        <executions>
+          <execution>
+            <id>default-prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>default-report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>default-check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>COMPLEXITY</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.30</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
             </configuration>
           </execution>
         </executions>
