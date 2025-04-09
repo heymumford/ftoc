@@ -56,17 +56,23 @@ public class FtocUtilityStepDefs {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         System.setOut(new PrintStream(outputStream));
         
-        // Process the directory
-        ftoc.processDirectory(directoryPath);
-        
-        // Restore original output stream
-        System.setOut(originalOut);
-        
-        // Save the captured output
-        capturedOutput = outputStream.toString();
-        
-        // Parse tag counts from output for verification
-        parseTagCounts(capturedOutput);
+        try {
+            // Process the directory
+            ftoc.processDirectory(directoryPath);
+            
+            // Save the captured output
+            capturedOutput = outputStream.toString();
+            
+            // Parse tag counts from output for verification
+            parseTagCounts(capturedOutput);
+            
+            // Debug output
+            System.setOut(originalOut);
+            logger.info("Captured output: {}", capturedOutput.substring(0, Math.min(200, capturedOutput.length())) + "...");
+        } finally {
+            // Restore original output stream
+            System.setOut(originalOut);
+        }
     }
     
     @When("I run the utility on {string}")
@@ -76,18 +82,24 @@ public class FtocUtilityStepDefs {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         System.setOut(new PrintStream(outputStream));
         
-        // Process the directory containing the file
-        String directoryPath = new File(filePath).getParent();
-        ftoc.processDirectory(directoryPath);
-        
-        // Restore original output stream
-        System.setOut(originalOut);
-        
-        // Save the captured output
-        capturedOutput = outputStream.toString();
-        
-        // Parse tag counts from output for verification
-        parseTagCounts(capturedOutput);
+        try {
+            // Process the directory containing the file
+            String directoryPath = new File(filePath).getParent();
+            ftoc.processDirectory(directoryPath);
+            
+            // Save the captured output
+            capturedOutput = outputStream.toString();
+            
+            // Parse tag counts from output for verification
+            parseTagCounts(capturedOutput);
+            
+            // Debug output
+            System.setOut(originalOut);
+            logger.info("Captured output: {}", capturedOutput.substring(0, Math.min(200, capturedOutput.length())) + "...");
+        } finally {
+            // Restore original output stream
+            System.setOut(originalOut);
+        }
     }
     
     @When("I run the utility with tag analysis on {string}")
@@ -141,22 +153,34 @@ public class FtocUtilityStepDefs {
 
     @Then("the output should contain a valid concordance summary")
     public void validateConcordanceSummary() {
-        // Modified to not fail since we're still developing this feature
         logger.info("Checking for concordance summary");
         assertNotNull(capturedOutput, "No output was captured");
         
-        // Only check for basic output elements, not the full concordance yet
-        assertTrue(capturedOutput.contains("Tag:") || capturedOutput.contains("Found scenario"), 
-                "Output does not contain basic recognition elements");
+        // Check for tag information in the output
+        boolean hasTagInfo = capturedOutput.contains("Tag:") || 
+                         capturedOutput.contains("@P0") || 
+                         capturedOutput.contains("@Smoke");
+        
+        logger.info("Has tag info: {}", hasTagInfo);
+        assertTrue(hasTagInfo, "Output does not contain basic recognition elements");
     }
     
     @Then("it should generate a table of contents")
     public void validateTocGeneration() {
-        // This is a minimal implementation to make the original test pass
-        // In the future, this will be expanded to verify proper TOC generation
+        logger.info("Checking for TOC generation");
         assertNotNull(capturedOutput, "No output was captured");
-        assertTrue(capturedOutput.contains("Found scenario"), 
-                "Output does not show any found scenarios");
+        
+        // Check for table of contents indicators
+        boolean hasTocHeader = capturedOutput.contains("TABLE OF CONTENTS") || 
+                              capturedOutput.contains("Table of Contents") || 
+                              capturedOutput.contains("tableOfContents");
+        
+        logger.info("Has TOC header: {}", hasTocHeader);
+        boolean hasScenarios = capturedOutput.contains("Scenario:") || 
+                              capturedOutput.contains("Scenario Outline:");
+                              
+        logger.info("Has scenarios: {}", hasScenarios);
+        assertTrue(hasTocHeader && hasScenarios, "Output does not show any found scenarios");
     }
     
     @Then("the tag concordance should list all tags from the feature files")
@@ -250,33 +274,79 @@ public class FtocUtilityStepDefs {
     
     @Then("the output should contain a structured table of contents")
     public void verifyTableOfContents() {
-        // This will be implemented when TOC generation is added
-        // For now, just verify that all scenarios are found
         logger.info("Checking for structured table of contents");
+        assertNotNull(capturedOutput, "No output was captured");
+        
+        // Check for TOC header
+        assertTrue(capturedOutput.contains("TABLE OF CONTENTS") || 
+                  capturedOutput.contains("Table of Contents") ||
+                  capturedOutput.contains("tableOfContents"),
+                  "Output does not contain a table of contents");
     }
     
     @Then("the TOC should list all scenarios and scenario outlines")
     public void verifyTocCompleteness() {
-        // This will be implemented when TOC generation is added
-        // For now, this is a placeholder
         logger.info("Checking for complete TOC listing");
-        // Future verification will count scenarios found vs. expected
+        assertNotNull(capturedOutput, "No output was captured");
+        
+        // Check for both scenario types
+        assertTrue(capturedOutput.contains("Scenario:") && 
+                  capturedOutput.contains("Scenario Outline:"),
+                  "TOC doesn't list both scenarios and scenario outlines");
+        
+        // Count the number of scenarios/outlines mentioned - for verification that all are listed
+        int scenarioCount = countMatches(capturedOutput, "Scenario:");
+        int outlineCount = countMatches(capturedOutput, "Scenario Outline:");
+        
+        logger.info("Found {} scenarios and {} outlines in TOC", scenarioCount, outlineCount);
+        assertTrue(scenarioCount + outlineCount > 0, "No scenarios found in TOC");
     }
     
     @Then("the TOC should be organized by feature file")
     public void verifyTocOrganization() {
-        // This will be implemented when TOC generation is added
-        // For now, this is a placeholder
         logger.info("Checking for TOC organization by feature file");
-        // Future implementation will verify structure
+        assertNotNull(capturedOutput, "No output was captured");
+        
+        // Look for file names in the output
+        boolean hasFileNames = capturedOutput.contains(".feature");
+        assertTrue(hasFileNames, "TOC doesn't appear to be organized by feature file");
+        
+        // Also check for section breaks
+        boolean hasStructure = capturedOutput.contains("=======") || 
+                              capturedOutput.contains("##") ||
+                              capturedOutput.contains("<h2>");
+        assertTrue(hasStructure, "TOC doesn't have clear structural organization");
     }
     
     @Then("the TOC should include tags for each scenario")
     public void verifyTocIncludesTags() {
-        // This will be implemented when TOC generation is added
-        // For now, this is a placeholder
         logger.info("Checking for tags in TOC");
-        // Future implementation will verify tags are included
+        assertNotNull(capturedOutput, "No output was captured");
+        
+        // Check for tag indicators
+        boolean hasTags = capturedOutput.contains("Tags:") || 
+                         capturedOutput.contains("class=\"tag\"") || 
+                         capturedOutput.contains("`@");
+        assertTrue(hasTags, "TOC doesn't include tags for scenarios");
+        
+        // Check for specific tag examples
+        boolean hasSpecificTags = capturedOutput.contains("@P") || 
+                                capturedOutput.contains("@Smoke") || 
+                                capturedOutput.contains("@Regression");
+        assertTrue(hasSpecificTags, "TOC doesn't contain expected common tags");
+    }
+    
+    /**
+     * Count the number of occurrences of a pattern in a string.
+     */
+    private int countMatches(String text, String pattern) {
+        int count = 0;
+        int index = 0;
+        while ((index = text.indexOf(pattern, index)) != -1) {
+            count++;
+            index += pattern.length();
+        }
+        return count;
     }
     
     @Then("the output should assess pairwise parameter coverage")
@@ -560,7 +630,7 @@ public class FtocUtilityStepDefs {
 
     // Helper method to parse tag counts from output
     private void parseTagCounts(String output) {
-        Pattern pattern = Pattern.compile("Tag: (@[\\w\\d]+), Count: (\\d+)");
+        Pattern pattern = Pattern.compile("Tag: (@[\\w\\d-]+), Count: (\\d+)");
         Matcher matcher = pattern.matcher(output);
         
         tagCounts.clear();
@@ -571,5 +641,8 @@ public class FtocUtilityStepDefs {
         }
         
         logger.info("Parsed tag counts: {}", tagCounts);
+        if (tagCounts.isEmpty()) {
+            logger.warn("No tags were parsed from the output");
+        }
     }
 }
