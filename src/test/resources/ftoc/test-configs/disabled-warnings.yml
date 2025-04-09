@@ -1,0 +1,49 @@
+# Configuration with many disabled warnings for testing
+warnings:
+  disabled:
+    - MISSING_PRIORITY_TAG
+    - EXCESSIVE_TAGS
+    - LOW_VALUE_TAG
+    - DUPLICATE_TAG
+    - LONG_SCENARIO
+    - UI_FOCUSED_STEP
+  
+  tagQuality:
+    MISSING_PRIORITY_TAG:
+      enabled: false
+      severity: info
+    MISSING_TYPE_TAG:
+      enabled: true
+      severity: warning
+    TAG_TYPO:
+      enabled: true
+      severity: error
+    ORPHANED_TAG:
+      enabled: true
+      severity: warning
+  
+  antiPatterns:
+    LONG_SCENARIO:
+      enabled: false
+      severity: info
+    MISSING_GIVEN:
+      enabled: true
+      severity: error
+    MISSING_WHEN:
+      enabled: true
+      severity: error
+    MISSING_THEN:
+      enabled: true
+      severity: error
+    UI_FOCUSED_STEP:
+      enabled: false
+      severity: info
+    INCONSISTENT_TENSE:
+      enabled: true
+      severity: warning
+
+# Using default thresholds
+thresholds:
+  maxSteps: 10
+  minSteps: 2
+  maxTags: 6

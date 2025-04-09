@@ -34,6 +34,33 @@ public class FtocUtilityStepDefs {
     private String capturedOutput;
     private Map<String, Integer> tagCounts = new HashMap<>();
     
+    /**
+     * Get the current FtocUtility instance for sharing with other step definition classes.
+     * 
+     * @return The current FtocUtility instance
+     */
+    public FtocUtility getFtocUtility() {
+        return ftoc;
+    }
+    
+    /**
+     * Get the captured output from the last command execution.
+     * 
+     * @return The captured output string
+     */
+    public String getCapturedOutput() {
+        return capturedOutput;
+    }
+    
+    /**
+     * Set the captured output for sharing with other step definition classes.
+     * 
+     * @param output The output to set
+     */
+    public void setCapturedOutput(String output) {
+        this.capturedOutput = output;
+    }
+    
     @Given("the ftoc utility is initialized")
     public void initializeFtoc() {
         ftoc = new FtocUtility();

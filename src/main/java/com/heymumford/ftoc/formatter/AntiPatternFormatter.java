@@ -17,7 +17,8 @@ public class AntiPatternFormatter {
         PLAIN_TEXT,
         MARKDOWN,
         HTML,
-        JSON
+        JSON,
+        JUNIT_XML
     }
 
     /**
@@ -39,6 +40,8 @@ public class AntiPatternFormatter {
                 return generateHtmlReport(warnings);
             case JSON:
                 return generateJsonReport(warnings);
+            case JUNIT_XML:
+                return generateJUnitXmlReport(warnings);
             case PLAIN_TEXT:
             default:
                 return generatePlainTextReport(warnings);
@@ -59,6 +62,18 @@ public class AntiPatternFormatter {
                        "</body>\n</html>";
             case JSON:
                 return "{\n  \"antiPatternReport\": {\n    \"warnings\": [],\n    \"count\": 0\n  }\n}";
+            case JUNIT_XML:
+                return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                       "<testsuite name=\"FTOC Anti-Pattern Analysis\" tests=\"1\" failures=\"0\" errors=\"0\" skipped=\"0\" timestamp=\"" + 
+                       java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME) + 
+                       "\">\n" +
+                       "  <properties>\n" +
+                       "    <property name=\"analysis_type\" value=\"anti_pattern\"/>\n" +
+                       "  </properties>\n" +
+                       "  <testcase name=\"anti_pattern_check\" classname=\"com.heymumford.ftoc.AntiPatternAnalysis\">\n" +
+                       "    <system-out>No anti-pattern issues were detected.</system-out>\n" +
+                       "  </testcase>\n" +
+                       "</testsuite>";
             case PLAIN_TEXT:
             default:
                 return "FEATURE ANTI-PATTERN REPORT\n============================\n\nNo anti-pattern issues detected.";
@@ -352,6 +367,14 @@ public class AntiPatternFormatter {
                   .replace(">", "&gt;")
                   .replace("\"", "&quot;")
                   .replace("'", "&#39;");
+    }
+
+    /**
+     * Generate a JUnit XML report of anti-pattern warnings.
+     */
+    private String generateJUnitXmlReport(List<FeatureAntiPatternAnalyzer.Warning> warnings) {
+        JUnitFormatter formatter = new JUnitFormatter();
+        return formatter.generateAntiPatternReport(warnings);
     }
 
     /**

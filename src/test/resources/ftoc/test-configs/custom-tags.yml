@@ -1,0 +1,43 @@
+# Configuration with custom tag lists
+warnings:
+  # Using default warning settings
+  
+# Custom tag definitions
+tags:
+  # Completely different priority tag list
+  priority:
+    - "@Priority-1"
+    - "@Priority-2"
+    - "@Priority-3"
+    - "@Blocker"
+    - "@Major"
+    - "@Minor"
+    - "@Trivial"
+  
+  # Custom type tags
+  type:
+    - "@FrontEnd"
+    - "@BackEnd"
+    - "@Database"
+    - "@Security"
+    - "@Performance"
+    - "@Mobile"
+    - "@Desktop"
+    - "@Tablet"
+  
+  # Custom status tags  
+  status:
+    - "@InProgress"
+    - "@ReadyForReview"
+    - "@Blocked"
+    - "@Completed"
+    - "@OnHold"
+  
+  # Custom low-value tag list
+  lowValue:
+    - "@NeedsWork"
+    - "@Draft"
+    - "@QuickTest"
+    - "@Demo"
+    - "@PoC"
+    - "@JustForNow"

@@ -1,0 +1,84 @@
+# Custom warning configuration for testing
+warnings:
+  disabled:
+    - DUPLICATE_TAG
+    - AMBIGUOUS_TAG
+  
+  tagQuality:
+    MISSING_PRIORITY_TAG:
+      enabled: true
+      severity: error
+    MISSING_TYPE_TAG:
+      enabled: true
+      severity: warning
+    LOW_VALUE_TAG:
+      enabled: true
+      severity: info
+    EXCESSIVE_TAGS:
+      enabled: true
+      severity: error
+    TAG_TYPO:
+      enabled: true
+      severity: warning
+    DUPLICATE_TAG:
+      enabled: false
+      severity: info
+  
+  antiPatterns:
+    LONG_SCENARIO:
+      enabled: true
+      severity: error
+    TOO_FEW_STEPS:
+      enabled: false
+      severity: info
+    MISSING_GIVEN:
+      enabled: true
+      severity: error
+    MISSING_WHEN:
+      enabled: true
+      severity: error
+    MISSING_THEN:
+      enabled: true
+      severity: error
+    UI_FOCUSED_STEP:
+      enabled: true
+      severity: warning
+    IMPLEMENTATION_DETAIL:
+      enabled: true
+      severity: warning
+
+# Custom thresholds
+thresholds:
+  maxSteps: 12
+  minSteps: 2
+  maxTags: 5
+  maxScenarioNameLength: 80
+  maxStepLength: 100
+
+# Custom tag definitions
+tags:
+  priority:
+    - "@P0"
+    - "@P1"
+    - "@P2"
+    - "@Critical"
+    - "@High"
+    - "@Medium"
+    - "@Low"
+  
+  type:
+    - "@UI"
+    - "@API"
+    - "@Backend"
+    - "@Frontend"
+    - "@Integration"
+    - "@Unit"
+    - "@Functional"
+    - "@Acceptance"
+  
+  lowValue:
+    - "@Test"
+    - "@Temp"
+    - "@ToDo"
+    - "@TBD"
+    - "@WIP"

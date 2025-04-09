@@ -1,0 +1,162 @@
+# FTOC Warning Configuration
+# -----------------------
+# This file configures the warning system for FTOC utility.
+# You can enable/disable specific warnings and customize tags and thresholds.
+
+# Warnings configuration
+warnings:
+  # Disable specific warnings across all types
+  disabled:
+    # - MISSING_PRIORITY_TAG  # Uncomment to disable specific warnings
+    # - LONG_SCENARIO
+  
+  # Tag quality warnings configuration
+  tagQuality:
+    MISSING_PRIORITY_TAG:
+      enabled: true
+      severity: error
+    MISSING_TYPE_TAG:
+      enabled: true
+      severity: warning
+    LOW_VALUE_TAG:
+      enabled: true
+      severity: info
+    INCONSISTENT_TAGGING:
+      enabled: true
+      severity: warning
+    EXCESSIVE_TAGS:
+      enabled: true
+      severity: warning
+    TAG_TYPO:
+      enabled: true
+      severity: warning
+    ORPHANED_TAG:
+      enabled: true
+      severity: info
+    AMBIGUOUS_TAG:
+      enabled: true
+      severity: warning
+    TOO_GENERIC_TAG:
+      enabled: true
+      severity: info
+    INCONSISTENT_NESTING:
+      enabled: true
+      severity: warning
+    DUPLICATE_TAG:
+      enabled: true
+      severity: error
+  
+  # Anti-pattern warnings configuration
+  antiPatterns:
+    LONG_SCENARIO:
+      enabled: true
+      severity: warning
+    TOO_FEW_STEPS:
+      enabled: true
+      severity: warning
+    MISSING_GIVEN:
+      enabled: true
+      severity: error
+    MISSING_WHEN:
+      enabled: true
+      severity: error
+    MISSING_THEN:
+      enabled: true
+      severity: error
+    UI_FOCUSED_STEP:
+      enabled: true
+      severity: warning
+    IMPLEMENTATION_DETAIL:
+      enabled: true
+      severity: warning
+    MISSING_EXAMPLES:
+      enabled: true
+      severity: error
+    TOO_FEW_EXAMPLES:
+      enabled: true
+      severity: warning
+    LONG_SCENARIO_NAME:
+      enabled: true
+      severity: info
+    LONG_STEP_TEXT:
+      enabled: true
+      severity: info
+    INCORRECT_STEP_ORDER:
+      enabled: true
+      severity: error
+    AMBIGUOUS_PRONOUN:
+      enabled: true
+      severity: warning
+    INCONSISTENT_TENSE:
+      enabled: true
+      severity: warning
+    CONJUNCTION_IN_STEP:
+      enabled: true
+      severity: warning
+
+# Custom tag definitions
+tags:
+  priority:
+    - "@P0"
+    - "@P1"
+    - "@P2"
+    - "@P3"
+    - "@Critical"
+    - "@High"
+    - "@Medium"
+    - "@Low"
+  
+  type:
+    - "@UI"
+    - "@API"
+    - "@Backend"
+    - "@Frontend"
+    - "@Integration"
+    - "@Unit"
+    - "@Performance"
+    - "@Security"
+    - "@Regression"
+    - "@Smoke"
+    - "@E2E"
+    - "@Functional"
+    - "@Acceptance"
+    - "@System"
+    - "@Component"
+  
+  status:
+    - "@WIP"
+    - "@Ready"
+    - "@Review"
+    - "@Flaky"
+    - "@Deprecated"
+    - "@Legacy"
+    - "@Todo"
+    - "@Debug"
+    - "@InProgress"
+    - "@Completed"
+    - "@Blocked"
+  
+  lowValue:
+    - "@Test"
+    - "@Tests"
+    - "@Feature"
+    - "@Cucumber"
+    - "@Scenario"
+    - "@Gherkin"
+    - "@Temp"
+    - "@Temporary"
+    - "@Pending"
+    - "@Fixme"
+    - "@Workaround"
+    - "@Ignore"
+    - "@Skip"
+    - "@Manual"
+
+# Threshold configurations
+thresholds:
+  maxSteps: 10                   # Maximum number of steps in a scenario
+  minSteps: 2                    # Minimum number of steps in a scenario
+  minExamples: 2                 # Minimum number of examples in a scenario outline
+  maxTags: 6                     # Maximum number of tags on a feature/scenario
+  maxScenarioNameLength: 100     # Maximum length of a scenario name
+  maxStepLength: 120             # Maximum length of a step

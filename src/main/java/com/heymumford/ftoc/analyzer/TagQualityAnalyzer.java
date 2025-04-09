@@ -13,28 +13,35 @@ import java.util.stream.Collectors;
  */
 public class TagQualityAnalyzer {
 
-    // Known patterns for tag categorization
-    private static final List<String> PRIORITY_TAGS = Arrays.asList(
+    // Default patterns for tag categorization (can be overridden by configuration)
+    private static final List<String> DEFAULT_PRIORITY_TAGS = Arrays.asList(
             "@p0", "@p1", "@p2", "@p3", "@p4", 
             "@critical", "@high", "@medium", "@low",
             "@priority0", "@priority1", "@priority2", "@priority3");
             
-    private static final List<String> TYPE_TAGS = Arrays.asList(
+    private static final List<String> DEFAULT_TYPE_TAGS = Arrays.asList(
             "@ui", "@api", "@backend", "@frontend", "@integration", "@unit", 
             "@performance", "@security", "@regression", "@smoke", "@e2e", 
             "@functional", "@acceptance", "@system", "@component");
             
-    private static final List<String> STATUS_TAGS = Arrays.asList(
+    private static final List<String> DEFAULT_STATUS_TAGS = Arrays.asList(
             "@wip", "@ready", "@review", "@flaky", "@deprecated", "@legacy", 
             "@todo", "@debug", "@inprogress", "@completed", "@blocked");
             
-    private static final List<String> KNOWN_LOW_VALUE_TAGS = Arrays.asList(
+    private static final List<String> DEFAULT_LOW_VALUE_TAGS = Arrays.asList(
             "@test", "@tests", "@feature", "@cucumber", "@scenario", "@gherkin",
             "@temp", "@temporary", "@pending", "@fixme", "@workaround", 
             "@ignore", "@skip", "@manual");
+            
+    // Actual lists that will be used (may be overridden by configuration)
+    private List<String> PRIORITY_TAGS = new ArrayList<>(DEFAULT_PRIORITY_TAGS);
+    private List<String> TYPE_TAGS = new ArrayList<>(DEFAULT_TYPE_TAGS);
+    private List<String> STATUS_TAGS = new ArrayList<>(DEFAULT_STATUS_TAGS);
+    private List<String> KNOWN_LOW_VALUE_TAGS = new ArrayList<>(DEFAULT_LOW_VALUE_TAGS);
     
     private Map<String, Integer> tagConcordance;
     private List<Feature> features;
+    private com.heymumford.ftoc.config.WarningConfiguration config;
     
     /**
      * Types of tag warnings that can be detected.
@@ -107,14 +114,48 @@ public class TagQualityAnalyzer {
     }
     
     /**
-     * Create a new tag quality analyzer.
+     * Create a new tag quality analyzer with default configuration.
      * 
      * @param tagConcordance Map of tags to their occurrences
      * @param features List of features to analyze
      */
     public TagQualityAnalyzer(Map<String, Integer> tagConcordance, List<Feature> features) {
+        this(tagConcordance, features, new com.heymumford.ftoc.config.WarningConfiguration());
+    }
+    
+    /**
+     * Create a new tag quality analyzer with specific configuration.
+     * 
+     * @param tagConcordance Map of tags to their occurrences
+     * @param features List of features to analyze
+     * @param config The warning configuration to use
+     */
+    public TagQualityAnalyzer(Map<String, Integer> tagConcordance, List<Feature> features, 
+                              com.heymumford.ftoc.config.WarningConfiguration config) {
         this.tagConcordance = new HashMap<>(tagConcordance);
         this.features = new ArrayList<>(features);
+        this.config = config;
+        
+        // Apply custom tag lists from configuration if available
+        List<String> customPriorityTags = config.getCustomTags("priority");
+        if (!customPriorityTags.isEmpty()) {
+            this.PRIORITY_TAGS = new ArrayList<>(customPriorityTags);
+        }
+        
+        List<String> customTypeTags = config.getCustomTags("type");
+        if (!customTypeTags.isEmpty()) {
+            this.TYPE_TAGS = new ArrayList<>(customTypeTags);
+        }
+        
+        List<String> customStatusTags = config.getCustomTags("status");
+        if (!customStatusTags.isEmpty()) {
+            this.STATUS_TAGS = new ArrayList<>(customStatusTags);
+        }
+        
+        List<String> customLowValueTags = config.getCustomTags("lowValue");
+        if (!customLowValueTags.isEmpty()) {
+            this.KNOWN_LOW_VALUE_TAGS = new ArrayList<>(customLowValueTags);
+        }
     }
     
     /**
@@ -125,15 +166,46 @@ public class TagQualityAnalyzer {
     public List<Warning> analyzeTagQuality() {
         List<Warning> allWarnings = new ArrayList<>();
         
-        // Run all analysis methods and collect warnings
-        allWarnings.addAll(detectMissingPriorityTags());
-        allWarnings.addAll(detectMissingTypeTags());
-        allWarnings.addAll(detectLowValueTags());
-        allWarnings.addAll(detectOrphanedTags());
-        allWarnings.addAll(detectExcessiveTags());
-        allWarnings.addAll(detectInconsistentTagging());
-        allWarnings.addAll(detectPossibleTagTypos());
-        allWarnings.addAll(detectDuplicateTags());
+        // Run all analysis methods only if they're enabled in the configuration
+        if (config.isWarningEnabled(WarningType.MISSING_PRIORITY_TAG.name())) {
+            allWarnings.addAll(detectMissingPriorityTags());
+        }
+        
+        if (config.isWarningEnabled(WarningType.MISSING_TYPE_TAG.name())) {
+            allWarnings.addAll(detectMissingTypeTags());
+        }
+        
+        if (config.isWarningEnabled(WarningType.LOW_VALUE_TAG.name()) || 
+            config.isWarningEnabled(WarningType.TOO_GENERIC_TAG.name()) ||
+            config.isWarningEnabled(WarningType.AMBIGUOUS_TAG.name())) {
+            allWarnings.addAll(detectLowValueTags());
+        }
+        
+        if (config.isWarningEnabled(WarningType.ORPHANED_TAG.name()) ||
+            config.isWarningEnabled(WarningType.TAG_TYPO.name())) {
+            allWarnings.addAll(detectOrphanedTags());
+        }
+        
+        if (config.isWarningEnabled(WarningType.EXCESSIVE_TAGS.name())) {
+            allWarnings.addAll(detectExcessiveTags());
+        }
+        
+        if (config.isWarningEnabled(WarningType.INCONSISTENT_TAGGING.name())) {
+            allWarnings.addAll(detectInconsistentTagging());
+        }
+        
+        if (config.isWarningEnabled(WarningType.TAG_TYPO.name())) {
+            allWarnings.addAll(detectPossibleTagTypos());
+        }
+        
+        if (config.isWarningEnabled(WarningType.DUPLICATE_TAG.name())) {
+            allWarnings.addAll(detectDuplicateTags());
+        }
+        
+        // Filter out any disabled warnings
+        allWarnings = allWarnings.stream()
+                .filter(warning -> config.isWarningEnabled(warning.getType().name()))
+                .collect(Collectors.toList());
         
         return allWarnings;
     }
@@ -357,7 +429,9 @@ public class TagQualityAnalyzer {
      */
     private List<Warning> detectExcessiveTags() {
         List<Warning> warnings = new ArrayList<>();
-        final int MAX_RECOMMENDED_TAGS = 6;
+        
+        // Get the maximum tags threshold from configuration (default: 6)
+        final int MAX_RECOMMENDED_TAGS = config.getIntThreshold("maxTags", 6);
         
         for (Feature feature : features) {
             for (Scenario scenario : feature.getScenarios()) {

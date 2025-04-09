@@ -1,0 +1,44 @@
+# Configuration focusing on anti-pattern customization
+warnings:
+  disabled:
+    - CONJUNCTION_IN_STEP
+    - AMBIGUOUS_PRONOUN
+  
+  antiPatterns:
+    LONG_SCENARIO:
+      enabled: true
+      severity: error
+    TOO_FEW_STEPS:
+      enabled: true
+      severity: warning
+    MISSING_GIVEN:
+      enabled: true
+      severity: error
+    MISSING_WHEN:
+      enabled: true
+      severity: error
+    MISSING_THEN:
+      enabled: true
+      severity: error
+    UI_FOCUSED_STEP:
+      enabled: true
+      severity: warning
+    IMPLEMENTATION_DETAIL:
+      enabled: true
+      severity: warning
+    INCONSISTENT_TENSE:
+      enabled: true
+      severity: info
+    CONJUNCTION_IN_STEP:
+      enabled: false
+      severity: info
+    AMBIGUOUS_PRONOUN:
+      enabled: false
+      severity: info
+
+# Anti-pattern specific thresholds
+thresholds:
+  maxSteps: 8                    # Slightly stricter than default
+  minSteps: 2                    # Default
+  maxScenarioNameLength: 80      # Stricter than default
+  maxStepLength: 100             # Stricter than default

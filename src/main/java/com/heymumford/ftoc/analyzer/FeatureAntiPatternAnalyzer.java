@@ -6,6 +6,7 @@ import com.heymumford.ftoc.model.Scenario;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Analyzes feature files for common Cucumber/Gherkin anti-patterns.
@@ -14,12 +15,19 @@ import java.util.regex.Pattern;
  */
 public class FeatureAntiPatternAnalyzer {
 
-    // Patterns and constants
-    private static final int MAX_RECOMMENDED_STEPS = 10;
-    private static final int MIN_RECOMMENDED_STEPS = 2;
-    private static final int MIN_EXAMPLES_RECOMMENDED = 2;
-    private static final int MAX_SCENARIO_NAME_LENGTH = 100;
-    private static final int MAX_STEP_TEXT_LENGTH = 120;
+    // Default patterns and constants (can be overridden by configuration)
+    private static final int DEFAULT_MAX_RECOMMENDED_STEPS = 10;
+    private static final int DEFAULT_MIN_RECOMMENDED_STEPS = 2;
+    private static final int DEFAULT_MIN_EXAMPLES_RECOMMENDED = 2;
+    private static final int DEFAULT_MAX_SCENARIO_NAME_LENGTH = 100;
+    private static final int DEFAULT_MAX_STEP_TEXT_LENGTH = 120;
+    
+    // Actual values used (may be overridden by configuration)
+    private int MAX_RECOMMENDED_STEPS = DEFAULT_MAX_RECOMMENDED_STEPS;
+    private int MIN_RECOMMENDED_STEPS = DEFAULT_MIN_RECOMMENDED_STEPS;
+    private int MIN_EXAMPLES_RECOMMENDED = DEFAULT_MIN_EXAMPLES_RECOMMENDED;
+    private int MAX_SCENARIO_NAME_LENGTH = DEFAULT_MAX_SCENARIO_NAME_LENGTH;
+    private int MAX_STEP_TEXT_LENGTH = DEFAULT_MAX_STEP_TEXT_LENGTH;
     
     // UI action patterns
     private static final List<Pattern> UI_ACTION_PATTERNS = Arrays.asList(
@@ -54,6 +62,7 @@ public class FeatureAntiPatternAnalyzer {
     private static final Pattern BUT_PATTERN = Pattern.compile("^\\s*But\\s+", Pattern.CASE_INSENSITIVE);
     
     private final List<Feature> features;
+    private com.heymumford.ftoc.config.WarningConfiguration config;
     
     /**
      * Types of anti-pattern warnings that can be detected.
@@ -130,12 +139,31 @@ public class FeatureAntiPatternAnalyzer {
     }
     
     /**
-     * Create a new feature anti-pattern analyzer.
+     * Create a new feature anti-pattern analyzer with default configuration.
      * 
      * @param features List of features to analyze
      */
     public FeatureAntiPatternAnalyzer(List<Feature> features) {
+        this(features, new com.heymumford.ftoc.config.WarningConfiguration());
+    }
+    
+    /**
+     * Create a new feature anti-pattern analyzer with specific configuration.
+     * 
+     * @param features List of features to analyze
+     * @param config The warning configuration to use
+     */
+    public FeatureAntiPatternAnalyzer(List<Feature> features, 
+                                     com.heymumford.ftoc.config.WarningConfiguration config) {
         this.features = new ArrayList<>(features);
+        this.config = config;
+        
+        // Apply thresholds from configuration
+        this.MAX_RECOMMENDED_STEPS = config.getIntThreshold("maxSteps", DEFAULT_MAX_RECOMMENDED_STEPS);
+        this.MIN_RECOMMENDED_STEPS = config.getIntThreshold("minSteps", DEFAULT_MIN_RECOMMENDED_STEPS);
+        this.MIN_EXAMPLES_RECOMMENDED = config.getIntThreshold("minExamples", DEFAULT_MIN_EXAMPLES_RECOMMENDED);
+        this.MAX_SCENARIO_NAME_LENGTH = config.getIntThreshold("maxScenarioNameLength", DEFAULT_MAX_SCENARIO_NAME_LENGTH);
+        this.MAX_STEP_TEXT_LENGTH = config.getIntThreshold("maxStepLength", DEFAULT_MAX_STEP_TEXT_LENGTH);
     }
     
     /**
@@ -146,16 +174,53 @@ public class FeatureAntiPatternAnalyzer {
     public List<Warning> analyzeAntiPatterns() {
         List<Warning> allWarnings = new ArrayList<>();
         
-        // Run all analysis methods and collect warnings
-        allWarnings.addAll(detectLongScenarios());
-        allWarnings.addAll(detectTooFewSteps());
-        allWarnings.addAll(detectMissingGivenWhenThen());
-        allWarnings.addAll(detectUiFocusedSteps());
-        allWarnings.addAll(detectImplementationDetails());
-        allWarnings.addAll(detectScenarioOutlineIssues());
-        allWarnings.addAll(detectNamingIssues());
-        allWarnings.addAll(detectStepOrderIssues());
-        allWarnings.addAll(detectAmbiguousLanguage());
+        // Run all analysis methods only if they're enabled in the configuration
+        if (config.isWarningEnabled(WarningType.LONG_SCENARIO.name())) {
+            allWarnings.addAll(detectLongScenarios());
+        }
+        
+        if (config.isWarningEnabled(WarningType.TOO_FEW_STEPS.name())) {
+            allWarnings.addAll(detectTooFewSteps());
+        }
+        
+        if (config.isWarningEnabled(WarningType.MISSING_GIVEN.name()) || 
+            config.isWarningEnabled(WarningType.MISSING_WHEN.name()) ||
+            config.isWarningEnabled(WarningType.MISSING_THEN.name())) {
+            allWarnings.addAll(detectMissingGivenWhenThen());
+        }
+        
+        if (config.isWarningEnabled(WarningType.UI_FOCUSED_STEP.name())) {
+            allWarnings.addAll(detectUiFocusedSteps());
+        }
+        
+        if (config.isWarningEnabled(WarningType.IMPLEMENTATION_DETAIL.name())) {
+            allWarnings.addAll(detectImplementationDetails());
+        }
+        
+        if (config.isWarningEnabled(WarningType.MISSING_EXAMPLES.name()) ||
+            config.isWarningEnabled(WarningType.TOO_FEW_EXAMPLES.name())) {
+            allWarnings.addAll(detectScenarioOutlineIssues());
+        }
+        
+        if (config.isWarningEnabled(WarningType.LONG_SCENARIO_NAME.name()) ||
+            config.isWarningEnabled(WarningType.LONG_STEP_TEXT.name())) {
+            allWarnings.addAll(detectNamingIssues());
+        }
+        
+        if (config.isWarningEnabled(WarningType.INCORRECT_STEP_ORDER.name())) {
+            allWarnings.addAll(detectStepOrderIssues());
+        }
+        
+        if (config.isWarningEnabled(WarningType.AMBIGUOUS_PRONOUN.name()) ||
+            config.isWarningEnabled(WarningType.INCONSISTENT_TENSE.name()) ||
+            config.isWarningEnabled(WarningType.CONJUNCTION_IN_STEP.name())) {
+            allWarnings.addAll(detectAmbiguousLanguage());
+        }
+        
+        // Filter out any disabled warnings
+        allWarnings = allWarnings.stream()
+                .filter(warning -> config.isWarningEnabled(warning.getType().name()))
+                .collect(Collectors.toList());
         
         return allWarnings;
     }

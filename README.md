@@ -1,6 +1,6 @@
 # ftoc - Feature Table of Contents Utility
 
-[![Version](https://img.shields.io/badge/version-0.5.2-brightgreen.svg)](https://github.com/heymumford/ftoc/releases/tag/v0.5.2)
+[![Version](https://img.shields.io/badge/version-0.5.3-brightgreen.svg)](https://github.com/heymumford/ftoc/releases/tag/v0.5.3)
 [![Build](https://img.shields.io/badge/build-12-blue.svg)](https://github.com/heymumford/ftoc/actions)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 [![Java Version](https://img.shields.io/badge/java-11+-orange.svg)](https://openjdk.java.net/)

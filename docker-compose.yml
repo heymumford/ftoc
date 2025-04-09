@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  ftoc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Mount the feature files directory for analysis
+      - ./src/test/resources/ftoc/features:/data/features
+      # Mount the output directory
+      - ./target/docker-output:/output
+    environment:
+      - FTOC_OUTPUT_FORMAT=markdown
+    # Override the default command to analyze the mounted features
+    command: ["--directory", "/data/features", "--output-directory", "/output", "--format", "${FTOC_OUTPUT_FORMAT:-markdown}"]
+
+  ftoc-dev:
+    image: maven:3.8-openjdk-11
+    volumes:
+      # Mount the entire project directory for development
+      - .:/app
+      # Mount the Maven repository to avoid downloading dependencies every time
+      - ~/.m2:/root/.m2
+    working_dir: /app
+    # Keep the container running
+    command: tail -f /dev/null
+    ports:
+      # If needed for debugging
+      - "8000:8000"
+    environment:
+      - MAVEN_CONFIG=/root/.m2

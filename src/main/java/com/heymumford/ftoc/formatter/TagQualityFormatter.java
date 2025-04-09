@@ -17,7 +17,8 @@ public class TagQualityFormatter {
         PLAIN_TEXT,
         MARKDOWN,
         HTML,
-        JSON
+        JSON,
+        JUNIT_XML
     }
     
     /**
@@ -37,6 +38,8 @@ public class TagQualityFormatter {
                 return generateHtmlReport(warnings);
             case JSON:
                 return generateJsonReport(warnings);
+            case JUNIT_XML:
+                return generateJUnitXmlReport(warnings);
             default:
                 return generatePlainTextReport(warnings);
         }
@@ -346,6 +349,14 @@ public class TagQualityFormatter {
         return warningsByType;
     }
     
+    /**
+     * Generate a tag quality report in JUnit XML format.
+     */
+    private String generateJUnitXmlReport(List<Warning> warnings) {
+        JUnitFormatter formatter = new JUnitFormatter();
+        return formatter.generateTagQualityReport(warnings);
+    }
+
     /**
      * Escape special characters in JSON strings.
      */

@@ -1,0 +1,34 @@
+# Git
+.git
+.gitignore
+
+# Build files
+target/
+!target/*.jar
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Misc
+*.log
+*.swp
+*.bak
+*.tmp
+tmp/
+temp/
+.DS_Store

@@ -32,6 +32,71 @@ public class FeatureParser {
     private static final Pattern STEP_PATTERN = Pattern.compile("^\\s*(Given|When|Then|And|But)\\s+(.*)$");
     private static final Pattern EXAMPLES_PATTERN = Pattern.compile("^\\s*Examples:(.*)$");
     private static final Pattern TABLE_ROW_PATTERN = Pattern.compile("^\\s*\\|(.*)\\|\\s*$");
+    private static final Pattern KARATE_PATTERN = Pattern.compile("^\\s*\\*\\s+(.+)$");
+    private static final Pattern KARATE_MARKER_PATTERN = Pattern.compile("#(string|number|boolean|array|object|regex)");
+    
+    /**
+     * Parse a feature file by path.
+     * 
+     * @param filePath The path to the feature file
+     * @return A Feature object containing all parsed information
+     */
+    public Feature parseFeatureFile(String filePath) {
+        return parseFeatureFile(new File(filePath));
+    }
+    
+    /**
+     * Check if a file appears to contain Karate-specific syntax
+     * 
+     * @param file The file to check
+     * @return true if the file contains Karate syntax, false otherwise
+     */
+    protected boolean isKarateFile(File file) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            int lineCount = 0;
+            boolean hasKarateSyntax = false;
+            
+            // Check first 50 non-empty lines for Karate syntax
+            while ((line = reader.readLine()) != null && lineCount < 50) {
+                if (line.trim().isEmpty() || line.trim().startsWith("#")) {
+                    continue;
+                }
+                
+                lineCount++;
+                
+                // Check for * steps (Karate-specific)
+                if (KARATE_PATTERN.matcher(line).matches()) {
+                    return true;
+                }
+                
+                // Check for Karate schema markers
+                if (KARATE_MARKER_PATTERN.matcher(line).find()) {
+                    return true;
+                }
+                
+                // Check for common Karate keywords
+                if (line.contains("method GET") || 
+                    line.contains("method POST") || 
+                    line.contains("status ") ||
+                    line.contains("match ") ||
+                    line.contains("url ")) {
+                    return true;
+                }
+            }
+            
+            // Also check for Karate-related tags
+            if (file.getName().toLowerCase().contains("karate") || 
+                file.getPath().toLowerCase().contains("karate")) {
+                return true;
+            }
+            
+            return false;
+        } catch (IOException e) {
+            logger.error("Error checking for Karate syntax: {}", file.getName(), e);
+            return false;
+        }
+    }
     
     /**
      * Parse a feature file and return a Feature object.

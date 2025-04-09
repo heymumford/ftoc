@@ -1,0 +1,29 @@
+# Configuration focusing on threshold adjustments
+warnings:
+  # Using most default warning settings
+  
+  tagQuality:
+    EXCESSIVE_TAGS:
+      enabled: true
+      severity: error
+  
+  antiPatterns:
+    LONG_SCENARIO:
+      enabled: true
+      severity: error
+    LONG_SCENARIO_NAME:
+      enabled: true
+      severity: error
+    LONG_STEP_TEXT:
+      enabled: true
+      severity: error
+
+# Custom threshold configuration
+thresholds:
+  # Very strict thresholds for testing
+  maxSteps: 5                    # Much lower than default 10
+  minSteps: 3                    # Higher than default 2
+  maxExamples: 3                 # Higher than default 2
+  maxTags: 3                     # Much lower than default 6
+  maxScenarioNameLength: 50      # Much lower than default 100
+  maxStepLength: 60              # Much lower than default 120

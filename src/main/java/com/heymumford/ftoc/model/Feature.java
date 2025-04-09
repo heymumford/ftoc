@@ -14,11 +14,13 @@ public class Feature {
     private String description;
     private final List<String> tags;
     private final List<Scenario> scenarios;
+    private final java.util.Map<String, String> metadata;
 
     public Feature(String file) {
         this.file = file;
         this.tags = new ArrayList<>();
         this.scenarios = new ArrayList<>();
+        this.metadata = new java.util.HashMap<>();
         this.name = "Unnamed Feature";
         this.description = "";
     }
@@ -90,6 +92,45 @@ public class Feature {
         return file.substring(file.lastIndexOf('/') + 1);
     }
 
+    /**
+     * Add metadata to the feature.
+     * 
+     * @param key The metadata key
+     * @param value The metadata value
+     */
+    public void addMetadata(String key, String value) {
+        metadata.put(key, value);
+    }
+    
+    /**
+     * Get a metadata value.
+     * 
+     * @param key The metadata key
+     * @return The metadata value, or null if not found
+     */
+    public String getMetadata(String key) {
+        return metadata.get(key);
+    }
+    
+    /**
+     * Check if metadata exists for a key.
+     * 
+     * @param key The metadata key
+     * @return True if metadata exists for the key, false otherwise
+     */
+    public boolean hasMetadata(String key) {
+        return metadata.containsKey(key);
+    }
+    
+    /**
+     * Get all metadata as a map.
+     * 
+     * @return An unmodifiable map of metadata
+     */
+    public java.util.Map<String, String> getMetadata() {
+        return Collections.unmodifiableMap(metadata);
+    }
+    
     @Override
     public String toString() {
         return "Feature{" +
@@ -97,6 +138,7 @@ public class Feature {
                 ", name='" + name + '\'' +
                 ", scenarios=" + scenarios.size() +
                 ", tags=" + tags +
+                ", metadata=" + metadata +
                 '}';
     }
 }

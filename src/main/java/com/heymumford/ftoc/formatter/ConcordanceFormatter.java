@@ -16,7 +16,8 @@ public class ConcordanceFormatter {
         PLAIN_TEXT,
         MARKDOWN,
         HTML,
-        JSON
+        JSON,
+        JUNIT_XML
     }
     
     /**
@@ -39,6 +40,8 @@ public class ConcordanceFormatter {
                 return generateHtmlReport(tagConcordance, features);
             case JSON:
                 return generateJsonReport(tagConcordance, features);
+            case JUNIT_XML:
+                return generateJUnitXmlReport(tagConcordance, features);
             default:
                 return generatePlainTextReport(tagConcordance, features);
         }
@@ -678,6 +681,14 @@ public class ConcordanceFormatter {
         }
         
         return sb.toString();
+    }
+    
+    /**
+     * Generate a tag concordance report in JUnit XML format.
+     */
+    private String generateJUnitXmlReport(Map<String, Integer> tagConcordance, List<Feature> features) {
+        JUnitFormatter formatter = new JUnitFormatter();
+        return formatter.generateConcordanceReport(tagConcordance, features);
     }
     
     /**
