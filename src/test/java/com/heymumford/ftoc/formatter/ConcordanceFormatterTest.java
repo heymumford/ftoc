@@ -143,32 +143,33 @@ public class ConcordanceFormatterTest {
         List<Feature> features = new ArrayList<>();
         
         // Feature 1
-        Feature feature1 = new Feature();
-        feature1.setFile("feature1.feature");
+        Feature feature1 = new Feature("feature1.feature");
         feature1.setName("Feature 1");
-        feature1.setTags(Arrays.asList("@P0", "@API"));
+        feature1.addTag("@P0");
+        feature1.addTag("@API");
         
-        Scenario scenario1 = new Scenario();
-        scenario1.setName("Scenario 1");
-        scenario1.setTags(Arrays.asList("@API", "@Regression"));
+        Scenario scenario1 = new Scenario("Scenario 1", "Scenario", 1);
+        scenario1.addTag("@API");
+        scenario1.addTag("@Regression");
         
-        Scenario scenario2 = new Scenario();
-        scenario2.setName("Scenario 2");
-        scenario2.setTags(Arrays.asList("@P1", "@API"));
+        Scenario scenario2 = new Scenario("Scenario 2", "Scenario", 2);
+        scenario2.addTag("@P1");
+        scenario2.addTag("@API");
         
-        feature1.setScenarios(Arrays.asList(scenario1, scenario2));
+        feature1.addScenario(scenario1);
+        feature1.addScenario(scenario2);
         
         // Feature 2
-        Feature feature2 = new Feature();
-        feature2.setFile("feature2.feature");
+        Feature feature2 = new Feature("feature2.feature");
         feature2.setName("Feature 2");
-        feature2.setTags(Arrays.asList("@P1", "@UI"));
+        feature2.addTag("@P1");
+        feature2.addTag("@UI");
         
-        Scenario scenario3 = new Scenario();
-        scenario3.setName("Scenario 3");
-        scenario3.setTags(Arrays.asList("@P2", "@Regression"));
+        Scenario scenario3 = new Scenario("Scenario 3", "Scenario", 3);
+        scenario3.addTag("@P2");
+        scenario3.addTag("@Regression");
         
-        feature2.setScenarios(Arrays.asList(scenario3));
+        feature2.addScenario(scenario3);
         
         features.add(feature1);
         features.add(feature2);

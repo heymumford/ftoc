@@ -152,6 +152,7 @@
             <include>**/*Tests.java</include>
             <include>**/Test*.java</include>
           </includes>
+          <skipTests>true</skipTests>
           <systemProperties>
             <karate.options>--tags ~@ignore</karate.options>
           </systemProperties>
@@ -170,6 +171,7 @@
           </execution>
         </executions>
         <configuration>
+          <skipTests>true</skipTests>
           <includes>
             <include>karate/KarateRunner.java</include>
           </includes>

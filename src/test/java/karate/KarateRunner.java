@@ -60,13 +60,13 @@ class KarateRunner {
         
         // Output results summary
         logger.info("Karate tests completed. Total: {}, Passed: {}, Failed: {}, Skipped: {}",
-            results.getFeatureCount(),
-            results.getPassCount(),
-            results.getFailCount(),
-            results.getSkipCount());
+            results.getFeaturesTotal(),
+            results.getFeaturesPassed(),
+            results.getFeaturesFailed(),
+            0); // Karate 1.4.0 doesn't track skipped features
         
         // Fail the test if there are any failures
-        assertEquals(0, results.getFailCount(), 
-            results.getFailCount() + " Karate test(s) failed. See the report at: " + reportDir);
+        assertEquals(0, results.getFeaturesFailed(), 
+            results.getFeaturesFailed() + " Karate test(s) failed. See the report at: " + reportDir);
     }
 }

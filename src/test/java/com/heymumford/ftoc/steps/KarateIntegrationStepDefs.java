@@ -75,9 +75,9 @@ public class KarateIntegrationStepDefs {
                    "There should be more feature files than Karate-style feature files");
         
         // Verify basic.feature isn't marked as Karate
-        assertTrue(capturedOutput.contains("basic.feature") && 
-                   !capturedOutput.contains("basic.feature")
-                                 .contains("[Karate-style Feature File]"),
+        assertTrue(capturedOutput.contains("basic.feature"), 
+                  "Output should contain basic.feature");
+        assertFalse(capturedOutput.contains("basic.feature [Karate-style Feature File]"),
                    "basic.feature should not be marked as a Karate-style feature file");
     }
     
