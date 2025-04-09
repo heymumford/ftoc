@@ -40,9 +40,30 @@ public class FeatureParser {
      * 
      * @param filePath The path to the feature file
      * @return A Feature object containing all parsed information
+     * @throws com.heymumford.ftoc.exception.ParsingException If there is an error parsing the feature file
+     * @throws com.heymumford.ftoc.exception.FileException If the file cannot be found or read
      */
-    public Feature parseFeatureFile(String filePath) {
-        return parseFeatureFile(new File(filePath));
+    public Feature parseFeatureFile(String filePath) throws com.heymumford.ftoc.exception.ParsingException, com.heymumford.ftoc.exception.FileException {
+        if (filePath == null || filePath.isEmpty()) {
+            throw new com.heymumford.ftoc.exception.ParsingException(
+                "Feature file path cannot be null or empty",
+                com.heymumford.ftoc.exception.ErrorCode.PARSE_ERROR);
+        }
+        
+        File file = new File(filePath);
+        if (!file.exists()) {
+            throw new com.heymumford.ftoc.exception.FileException(
+                "Feature file not found: " + filePath,
+                com.heymumford.ftoc.exception.ErrorCode.FILE_NOT_FOUND);
+        }
+        
+        if (!file.canRead()) {
+            throw new com.heymumford.ftoc.exception.FileException(
+                "Feature file cannot be read (check permissions): " + filePath,
+                com.heymumford.ftoc.exception.ErrorCode.FILE_READ_ERROR);
+        }
+        
+        return parseFeatureFile(file);
     }
     
     /**
@@ -50,12 +71,28 @@ public class FeatureParser {
      * 
      * @param file The file to check
      * @return true if the file contains Karate syntax, false otherwise
+     * @throws com.heymumford.ftoc.exception.FileException If the file cannot be read
      */
-    protected boolean isKarateFile(File file) {
+    protected boolean isKarateFile(File file) throws com.heymumford.ftoc.exception.FileException {
+        if (file == null) {
+            throw new IllegalArgumentException("File cannot be null");
+        }
+        
+        if (!file.exists()) {
+            throw new com.heymumford.ftoc.exception.FileException(
+                "File not found: " + file.getAbsolutePath(),
+                com.heymumford.ftoc.exception.ErrorCode.FILE_NOT_FOUND);
+        }
+        
+        if (!file.canRead()) {
+            throw new com.heymumford.ftoc.exception.FileException(
+                "File cannot be read (check permissions): " + file.getAbsolutePath(),
+                com.heymumford.ftoc.exception.ErrorCode.FILE_READ_ERROR);
+        }
+        
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             int lineCount = 0;
-            boolean hasKarateSyntax = false;
             
             // Check first 50 non-empty lines for Karate syntax
             while ((line = reader.readLine()) != null && lineCount < 50) {
@@ -93,8 +130,11 @@ public class FeatureParser {
             
             return false;
         } catch (IOException e) {
-            logger.error("Error checking for Karate syntax: {}", file.getName(), e);
-            return false;
+            throw new com.heymumford.ftoc.exception.FileException(
+                "Error checking for Karate syntax: " + file.getName(),
+                e,
+                com.heymumford.ftoc.exception.ErrorCode.FILE_READ_ERROR,
+                com.heymumford.ftoc.exception.ExceptionSeverity.WARNING); // Using WARNING since this is not critical
         }
     }
     
@@ -103,8 +143,28 @@ public class FeatureParser {
      * 
      * @param file The feature file to parse
      * @return A Feature object containing all parsed information
+     * @throws com.heymumford.ftoc.exception.ParsingException If there is an error parsing the feature file
+     * @throws com.heymumford.ftoc.exception.FileException If the file cannot be read
      */
-    public Feature parseFeatureFile(File file) {
+    public Feature parseFeatureFile(File file) throws com.heymumford.ftoc.exception.ParsingException, com.heymumford.ftoc.exception.FileException {
+        if (file == null) {
+            throw new com.heymumford.ftoc.exception.ParsingException(
+                "Feature file cannot be null",
+                com.heymumford.ftoc.exception.ErrorCode.PARSE_ERROR);
+        }
+        
+        if (!file.exists()) {
+            throw new com.heymumford.ftoc.exception.FileException(
+                "Feature file not found: " + file.getAbsolutePath(),
+                com.heymumford.ftoc.exception.ErrorCode.FILE_NOT_FOUND);
+        }
+        
+        if (!file.canRead()) {
+            throw new com.heymumford.ftoc.exception.FileException(
+                "Feature file cannot be read (check permissions): " + file.getAbsolutePath(),
+                com.heymumford.ftoc.exception.ErrorCode.FILE_READ_ERROR);
+        }
+        
         Feature feature = new Feature(file.getAbsolutePath());
         List<String> currentTags = new ArrayList<>();
         Scenario currentScenario = null;
@@ -236,8 +296,23 @@ public class FeatureParser {
                     }
                 }
             }
+            
+            // Validate the parsed feature
+            if (feature.getName() == null || feature.getName().isEmpty()) {
+                throw new com.heymumford.ftoc.exception.ParsingException(
+                    "Invalid feature file: No 'Feature:' definition found in " + file.getName(),
+                    com.heymumford.ftoc.exception.ErrorCode.INVALID_GHERKIN);
+            }
+            
+            if (feature.getScenarios().isEmpty()) {
+                logger.warn("Feature file {} contains no scenarios", file.getName());
+            }
+            
         } catch (IOException e) {
-            logger.error("Error parsing feature file: {}", file.getName(), e);
+            throw new com.heymumford.ftoc.exception.FileException(
+                "Error reading feature file: " + file.getName(),
+                e,
+                com.heymumford.ftoc.exception.ErrorCode.FILE_READ_ERROR);
         }
         
         return feature;

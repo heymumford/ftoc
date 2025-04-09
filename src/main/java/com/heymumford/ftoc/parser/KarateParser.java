@@ -40,18 +40,21 @@ public class KarateParser extends FeatureParser {
      * 
      * @param filePath The path to the feature file
      * @return A Feature object representing the parsed file
+     * @throws com.heymumford.ftoc.exception.ParsingException If there is an error parsing the feature file
+     * @throws com.heymumford.ftoc.exception.FileException If the file cannot be found or read
      */
     @Override
-    public Feature parseFeatureFile(String filePath) {
+    public Feature parseFeatureFile(String filePath) throws com.heymumford.ftoc.exception.ParsingException, com.heymumford.ftoc.exception.FileException {
         // First use the standard Gherkin parser
         Feature feature = super.parseFeatureFile(filePath);
         
-        if (feature == null) {
-            return null;
-        }
-        
         // Enhance with Karate-specific information
-        enhanceWithKarateInfo(feature, filePath);
+        try {
+            enhanceWithKarateInfo(feature, filePath);
+        } catch (Exception e) {
+            // If there's an error while enhancing, log it but don't fail the parsing
+            logger.warn("Error enhancing feature with Karate information: {}", e.getMessage());
+        }
         
         return feature;
     }
@@ -61,8 +64,13 @@ public class KarateParser extends FeatureParser {
      * 
      * @param feature The feature to enhance
      * @param filePath The path to the original feature file
+     * @throws com.heymumford.ftoc.exception.FileException If the file cannot be read
      */
-    private void enhanceWithKarateInfo(Feature feature, String filePath) {
+    private void enhanceWithKarateInfo(Feature feature, String filePath) throws com.heymumford.ftoc.exception.FileException {
+        if (feature == null) {
+            throw new IllegalArgumentException("Feature cannot be null");
+        }
+        
         // Flag to mark the feature as containing Karate syntax
         boolean hasKarateSyntax = false;
         boolean hasApiCalls = false;
@@ -115,7 +123,11 @@ public class KarateParser extends FeatureParser {
                 }
             }
         } catch (IOException e) {
-            logger.error("Error reading file for Karate enhancements: {}", filePath, e);
+            throw new com.heymumford.ftoc.exception.FileException(
+                "Error reading file for Karate enhancements: " + filePath,
+                e,
+                com.heymumford.ftoc.exception.ErrorCode.FILE_READ_ERROR,
+                com.heymumford.ftoc.exception.ExceptionSeverity.WARNING); // Use WARNING level since this is non-critical
         }
         
         // Add Karate metadata to the feature

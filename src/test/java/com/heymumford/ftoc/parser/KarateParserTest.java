@@ -1,5 +1,7 @@
 package com.heymumford.ftoc.parser;
 
+import com.heymumford.ftoc.exception.FileException;
+import com.heymumford.ftoc.exception.ParsingException;
 import com.heymumford.ftoc.model.Feature;
 import com.heymumford.ftoc.model.Scenario;
 import org.junit.jupiter.api.Test;
@@ -16,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class KarateParserTest {
 
     @Test
-    void shouldDetectKarateFiles() {
+    void shouldDetectKarateFiles() throws FileException {
         FeatureParser parser = new FeatureParser();
         
         // Test a standard Karate file
@@ -31,7 +33,7 @@ class KarateParserTest {
     }
 
     @Test
-    void shouldParseKarateFeatureFile() {
+    void shouldParseKarateFeatureFile() throws FileException, ParsingException {
         // Create the Karate parser
         KarateParser parser = new KarateParser();
         
@@ -60,7 +62,7 @@ class KarateParserTest {
     }
     
     @Test
-    void shouldParserFactoryChooseCorrectParser() {
+    void shouldParserFactoryChooseCorrectParser() throws FileException {
         // Test with a Karate file
         String karateFilePath = "src/test/resources/ftoc/test-feature-files/karate_style.feature";
         FeatureParser karateParser = FeatureParserFactory.getParser(karateFilePath);
