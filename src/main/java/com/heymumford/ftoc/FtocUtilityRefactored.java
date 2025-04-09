@@ -36,14 +36,28 @@ public class FtocUtilityRefactored {
     private boolean detectAntiPatterns;
     private boolean enablePerformanceMonitoring;
     private WarningConfiguration warningConfig;
+    
+    // Plugin system
+    private com.heymumford.ftoc.plugin.PluginRegistry pluginRegistry;
 
     /**
      * Create a new instance with default components.
      */
     public FtocUtilityRefactored() {
-        this.repository = new DefaultFeatureRepository();
-        this.processor = new DefaultFeatureProcessor(repository);
-        this.reporter = new DefaultReporter();
+        // Initialize plugin registry first
+        this.pluginRegistry = new com.heymumford.ftoc.plugin.PluginRegistry();
+        this.pluginRegistry.loadPlugins();
+        
+        // Use plugin-provided components if available, otherwise use defaults
+        this.repository = pluginRegistry.getCustomFeatureRepository() != null ? 
+                pluginRegistry.getCustomFeatureRepository() : new DefaultFeatureRepository();
+                
+        this.processor = pluginRegistry.getCustomFeatureProcessor() != null ?
+                pluginRegistry.getCustomFeatureProcessor() : new DefaultFeatureProcessor(repository);
+                
+        this.reporter = pluginRegistry.getCustomReporter() != null ?
+                pluginRegistry.getCustomReporter() : new DefaultReporter();
+                
         this.outputFormat = Reporter.Format.PLAIN_TEXT;
         this.includeTagFilters = new ArrayList<>();
         this.excludeTagFilters = new ArrayList<>();
@@ -57,6 +71,11 @@ public class FtocUtilityRefactored {
      * Create a new instance with custom components.
      */
     public FtocUtilityRefactored(FeatureRepository repository, FeatureProcessor processor, Reporter reporter) {
+        // Initialize plugin registry
+        this.pluginRegistry = new com.heymumford.ftoc.plugin.PluginRegistry();
+        this.pluginRegistry.loadPlugins();
+        
+        // Use explicitly provided components (ignore plugin-provided ones)
         this.repository = repository;
         this.processor = processor;
         this.reporter = reporter;
@@ -80,6 +99,32 @@ public class FtocUtilityRefactored {
         logger.debug("JVM information - Max Memory: {} MB, Available Processors: {}", 
                 runtime.maxMemory() / (1024 * 1024),
                 runtime.availableProcessors());
+        
+        // Trigger startup event for plugins
+        if (pluginRegistry != null) {
+            pluginRegistry.triggerEvent(com.heymumford.ftoc.plugin.PluginEvent.STARTUP);
+        }
+    }
+    
+    /**
+     * Get the plugin registry.
+     * 
+     * @return The plugin registry
+     */
+    public com.heymumford.ftoc.plugin.PluginRegistry getPluginRegistry() {
+        return pluginRegistry;
+    }
+    
+    /**
+     * Get a summary of all loaded plugins.
+     * 
+     * @return A summary string of loaded plugins
+     */
+    public String getPluginSummary() {
+        if (pluginRegistry == null) {
+            return "Plugin system not initialized";
+        }
+        return pluginRegistry.getPluginSummary();
     }
 
     /**
@@ -204,6 +249,20 @@ public class FtocUtilityRefactored {
     }
     
     /**
+     * Register a plugin manually (without loading from JAR).
+     * Useful for testing or programmatic plugin creation.
+     * 
+     * @param plugin The plugin to register
+     */
+    public void registerPlugin(com.heymumford.ftoc.plugin.FtocPlugin plugin) {
+        if (pluginRegistry != null) {
+            pluginRegistry.registerPlugin(plugin);
+        } else {
+            logger.error("Cannot register plugin: plugin system not initialized");
+        }
+    }
+    
+    /**
      * Process a directory of feature files and generate reports.
      * 
      * @param directoryPath Path to the directory containing feature files
@@ -237,8 +296,24 @@ public class FtocUtilityRefactored {
                 return;
             }
             
+            // Notify plugins that features have been loaded
+            if (pluginRegistry != null) {
+                pluginRegistry.triggerEvent(com.heymumford.ftoc.plugin.PluginEvent.FEATURES_LOADED, features);
+            }
+            
             // Generate tag concordance
             Map<String, Integer> tagConcordance = processor.generateTagConcordance(features);
+            
+            // Create report context object for plugin events
+            ReportContext reportContext = new ReportContext(
+                features, tagConcordance, outputFormat, includeTagFilters, excludeTagFilters,
+                analyzeTagQuality, detectAntiPatterns, generateConcordanceOnly
+            );
+            
+            // Notify plugins before report generation
+            if (pluginRegistry != null) {
+                pluginRegistry.triggerEvent(com.heymumford.ftoc.plugin.PluginEvent.PRE_GENERATE_REPORT, reportContext);
+            }
             
             // Generate concordance report
             reporter.generateConcordanceReport(tagConcordance, features, outputFormat);
@@ -256,6 +331,11 @@ public class FtocUtilityRefactored {
             // Generate TOC only if not in concordance-only mode
             if (!generateConcordanceOnly) {
                 reporter.generateTableOfContents(features, outputFormat, includeTagFilters, excludeTagFilters);
+            }
+            
+            // Notify plugins after report generation
+            if (pluginRegistry != null) {
+                pluginRegistry.triggerEvent(com.heymumford.ftoc.plugin.PluginEvent.POST_GENERATE_REPORT, reportContext);
             }
             
             // Report performance metrics if enabled
@@ -319,6 +399,7 @@ public class FtocUtilityRefactored {
         System.out.println("  --show-config       Display the current warning configuration and exit");
         System.out.println("  --performance       Enable performance monitoring and optimizations");
         System.out.println("                      Will use parallel processing for large repositories");
+        System.out.println("  --list-plugins      List all loaded plugins and exit");
         System.out.println("  --benchmark         Run performance benchmarks (see benchmark options below)");
         System.out.println("  --version, -v       Display version information");
         System.out.println("  --help              Display this help message");
@@ -352,8 +433,23 @@ public class FtocUtilityRefactored {
             return;
         }
         
+        // Handle plugin listing
+        if (Arrays.asList(args).contains("--list-plugins")) {
+            FtocUtilityRefactored ftoc = new FtocUtilityRefactored();
+            ftoc.initialize();
+            System.out.println("Loaded Plugins:");
+            System.out.println(ftoc.getPluginSummary());
+            return;
+        }
+        
         FtocUtilityRefactored ftoc = new FtocUtilityRefactored();
         ftoc.initialize();
+        
+        // Allow plugins to pre-process command line arguments
+        if (ftoc.getPluginRegistry() != null) {
+            ftoc.getPluginRegistry().triggerEvent(
+                com.heymumford.ftoc.plugin.PluginEvent.PRE_PARSE_ARGUMENTS, args);
+        }
         
         String directory = ".";
         boolean concordanceOnly = false;
@@ -416,8 +512,22 @@ public class FtocUtilityRefactored {
             }
         }
         
+        // Create command line context for plugins
+        CommandLineContext cmdContext = new CommandLineContext(
+            directory, concordanceOnly, ftoc.getOutputFormat(),
+            ftoc.includeTagFilters, ftoc.excludeTagFilters,
+            ftoc.analyzeTagQuality, ftoc.detectAntiPatterns,
+            ftoc.enablePerformanceMonitoring
+        );
+        
+        // Allow plugins to post-process command line arguments
+        if (ftoc.getPluginRegistry() != null) {
+            ftoc.getPluginRegistry().triggerEvent(
+                com.heymumford.ftoc.plugin.PluginEvent.POST_PARSE_ARGUMENTS, cmdContext);
+        }
+        
         // Process the directory
-        ftoc.processDirectory(directory, concordanceOnly);
+        ftoc.processDirectory(cmdContext.getDirectory(), cmdContext.isConcordanceOnly());
     }
     
     /**

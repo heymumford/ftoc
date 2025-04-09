@@ -48,6 +48,7 @@ Each ADR follows this format:
 5. [ADR-0005: Test-Driven Development Approach](0005-test-driven-development.md)
 6. [ADR-0006: Separation of Concerns Architecture](0006-separation-of-concerns.md)
 7. [ADR-0007: GitHub Copilot Integration](0007-github-copilot-integration.md)
+8. [ADR-0008: Plugin System for Extensibility](0008-plugin-system.md)
 
 ## Creating New ADRs
 
