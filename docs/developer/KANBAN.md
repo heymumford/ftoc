@@ -15,6 +15,30 @@
 - [ ] Improve tag concordance report with more detailed statistics
 - [ ] Enhance warning system for "dumb" tags detection
 
+## GitHub Copilot Integration
+- [x] Setup Copilot-friendly repository structure
+  - [x] Create .github/copilot directory with prompts and examples
+  - [x] Document code patterns for Copilot
+- [x] Configure Copilot Code Review automation
+  - [x] Setup GitHub Actions workflow for Copilot code review
+  - [x] Configure review settings and patterns
+- [x] Create Copilot-optimized PR templates
+  - [x] Add Copilot-specific markers for better summaries
+  - [x] Include common task templates
+- [x] Add Copilot IDE integrations
+  - [x] Create VS Code settings for better Copilot experience
+  - [ ] Setup JetBrains IDE configurations for Copilot
+- [x] Implement Copilot developer onboarding
+  - [x] Create documentation with example prompts
+  - [x] Add task-specific examples
+- [ ] Create Copilot CLI integrations
+  - [ ] Setup script for Copilot CLI
+  - [ ] Add custom project aliases
+- [x] Implement advanced Copilot features
+  - [x] Configure Copilot Workspace for the project
+  - [ ] Explore Copilot Extension development
+  - [ ] Setup Copilot Edits modes for common tasks
+
 ## Architecture Improvements
 - [ ] Create proper separation of concerns (Parser, Processor, Reporter)
 - [ ] Implement plugin system for extensibility
@@ -36,3 +60,4 @@
 - [x] Basic tag concordance reporting
 - [x] Version reporting from properties
 - [x] Initial Cucumber test setup
+- [x] Project directory reorganization and cleanup
