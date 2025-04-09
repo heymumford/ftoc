@@ -5,6 +5,8 @@
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 [![Java Version](https://img.shields.io/badge/java-11+-orange.svg)](https://openjdk.java.net/)
 [![Cucumber](https://img.shields.io/badge/cucumber-compatible-green.svg)](https://cucumber.io/)
+[![Karate](https://img.shields.io/badge/karate-integrated-yellow.svg)](https://github.com/karatelabs/karate)
+[![Coverage](.github/badges/coverage.svg)](.github/badges/jacoco.csv)
 
 A command-line utility for Cucumber feature file analysis, documentation, and quality assurance.
 
@@ -17,7 +19,10 @@ A command-line utility for Cucumber feature file analysis, documentation, and qu
 - **Table of Contents Generation:** Creates structured TOC of all scenarios and scenario outlines
 - **Tag Concordance:** Counts and analyzes tag usage across feature files
 - **Quality Assurance:** Flags missing tags or use of low-value generic tags
-- **Cross-Language Support:** Works with feature files in any Cucumber implementation
+- **Cross-Language Support:** Works with feature files in any Cucumber implementation, including Karate
+- **Karate Support:** Specialized analysis of Karate API test files
+- **CI/CD Integration:** Generates JUnit XML reports for integration with CI systems
+- **Test Pyramid Integration:** System testing with Karate for robust CLI validation
 
 ## Who Is This For?
 
@@ -82,6 +87,10 @@ Managing large suites of Cucumber tests presents challenges:
 ### User Documentation
 
 - [Usage Guide](docs/user/usage.md)
+- [Tag Best Practices](docs/user/tag-best-practices.md)
+- [JUnit Report Integration](docs/user/junit-report-integration.md)
+- [Docker Usage](docs/user/docker-usage.md)
+- [Cross-Platform Usage](docs/user/cross-platform.md)
 
 ### Developer Documentation
 
@@ -90,7 +99,15 @@ Managing large suites of Cucumber tests presents challenges:
 - [Project Kanban Board](docs/developer/KANBAN.md)
 - [Version Management Guide](docs/developer/VERSION_MANAGEMENT.md)
 - [Classpath Optimization Report](docs/developer/CLASSPATH_OPTIMIZATION.md)
+- [XML Standards and Cleanup](docs/developer/XML_STANDARDS.md)
+- [Security Practices](docs/developer/SECURITY.md)
+- [Code Coverage](docs/developer/CODE_COVERAGE.md)
 - [Claude AI Assistant Guide](docs/developer/CLAUDE.md)
+- [Karate Testing Guide](docs/developer/KARATE_TESTING.md)
+- [Test Pyramid Strategy](docs/developer/TEST_PYRAMID.md)
+- [Conventional Commits Guide](docs/developer/CONVENTIONAL_COMMITS.md)
+- [Release Process](docs/developer/RELEASE_PROCESS.md)
+- [Changelog Usage](docs/developer/CHANGELOG_USAGE.md)
 
 For all documentation, see the [docs directory](docs/README.md).
 

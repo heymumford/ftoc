@@ -1,38 +1,53 @@
 # FTOC Development Kanban Board
 
-## Backlog
-- [ ] Implement configuration file support for customizable warnings
-- [ ] Expand test suite with more complex feature file examples
-- [ ] Create documentation for tag best practices
-- [ ] Add JUnit report integration
-- [ ] Create GitHub Actions workflow for CI/CD
+## P0 (Critical)
+- [x] Docker containerization
+  - [x] Create Dockerfile for FTOC
+  - [x] Configure multi-stage build for optimized image size
+  - [x] Setup Docker Compose for development environment
+  - [x] Setup GitHub Action for Docker image publishing
+  - [x] Add Docker documentation
 
-## In Progress
+## P1 (High Priority)
+- [x] CI/CD Enhancements
+  - [x] Add dependency scanning for vulnerabilities
+  - [x] Implement cross-platform builds (Linux, macOS, Windows)
+  - [x] Configure Slack integration for build notifications
+  - [x] Add code coverage reporting
+  - [x] Setup automated changelog generation
+  
+- [ ] Performance optimization for large repositories
+  - [ ] Implement parallel processing for multiple feature files
+  - [ ] Add memory usage tracking
+  - [ ] Create benchmark test suite
+  - [ ] Optimize parser for large files
+  - [ ] Add progress indicators for long-running tasks
+
+## P2 (Medium Priority)
 - [ ] Complete TOC generation with proper formatting
-- [ ] Improve tag concordance report with more detailed statistics
-- [ ] Enhance warning system for "dumb" tags detection
+  - [ ] Fix indentation in nested structures
+  - [ ] Add collapsible sections for HTML output
+  - [ ] Improve heading structure in Markdown output
+  - [ ] Add pagination for large TOCs
 
-## GitHub Copilot Integration
-- [x] Setup Copilot-friendly repository structure
-  - [x] Create .github/copilot directory with prompts and examples
-  - [x] Document code patterns for Copilot
-- [x] Configure Copilot Code Review automation
-  - [x] Setup GitHub Actions workflow for Copilot code review
-  - [x] Configure review settings and patterns
-- [x] Create Copilot-optimized PR templates
-  - [x] Add Copilot-specific markers for better summaries
-  - [x] Include common task templates
-- [x] Add Copilot IDE integrations
-  - [x] Create VS Code settings for better Copilot experience
+- [ ] Improve tag concordance report
+  - [ ] Add tag co-occurrence metrics
+  - [ ] Include tag trend analysis
+  - [ ] Visualize tag relationships
+  - [ ] Add statistical significance indicators
+
+- [ ] Enhance warning system for tag detection
+  - [ ] Add custom warning severity levels
+  - [ ] Improve heuristics for low-value tag detection
+  - [ ] Add suggestion system for better alternatives
+  - [ ] Implement tag standardization recommendations
+
+## P3 (Normal Priority)
+- [ ] GitHub Copilot Integration Extensions
   - [ ] Setup JetBrains IDE configurations for Copilot
-- [x] Implement Copilot developer onboarding
-  - [x] Create documentation with example prompts
-  - [x] Add task-specific examples
-- [ ] Create Copilot CLI integrations
-  - [ ] Setup script for Copilot CLI
-  - [ ] Add custom project aliases
-- [x] Implement advanced Copilot features
-  - [x] Configure Copilot Workspace for the project
+  - [ ] Create Copilot CLI integrations
+    - [ ] Setup script for Copilot CLI
+    - [ ] Add custom project aliases
   - [ ] Explore Copilot Extension development
   - [ ] Setup Copilot Edits modes for common tasks
 
@@ -42,6 +57,13 @@
 - [ ] Add more comprehensive error handling
 - [ ] Create interfaces for major components to allow for testing with mocks
 - [ ] Implement strategy pattern for different output formats
+
+## Future Enhancements
+- [ ] Generate and publish API documentation to GitHub Pages
+- [ ] Add visual diff tool for feature file changes
+- [ ] Implement internationalization support
+- [ ] Add custom reporting templates
+- [ ] Create VS Code extension for FTOC integration
 
 ## Testing Approach
 - [ ] Create sample feature files with various complexity for testing
@@ -61,3 +83,22 @@
 - [x] Add command line option for output format (plain text, markdown, HTML, JSON)
 - [x] Add command line option for filtering scenarios by tag
 - [x] Add detection and warnings for common anti-patterns in feature files
+- [x] Implement configuration file support for customizable warnings
+- [x] Expand test suite with more complex feature file examples
+- [x] Create documentation for tag best practices
+- [x] Add JUnit report integration
+- [x] Create GitHub Actions workflow for CI/CD
+- [x] GitHub Copilot Integration
+  - [x] Setup Copilot-friendly repository structure
+  - [x] Configure Copilot Code Review automation
+  - [x] Create Copilot-optimized PR templates
+  - [x] Add Copilot IDE integrations (VS Code)
+  - [x] Implement Copilot developer onboarding
+  - [x] Configure Copilot Workspace for the project
+- [x] Implement test pyramid integration with Karate for API testing
+  - [x] Setup Karate dependency and configuration
+  - [x] Create API test framework sample
+  - [x] Add documentation for Karate integration
+  - [x] Implement Karate syntax support in FTOC
+  - [x] Add JUnit report integration for Karate tests
+  - [x] Implement parallel execution for Karate tests

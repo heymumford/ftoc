@@ -1,0 +1,503 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+    paths-ignore:
+      - 'CHANGELOG.md'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      run_analysis:
+        description: 'Analyze feature files'
+        required: true
+        default: true
+        type: boolean
+      skip_tests:
+        description: 'Skip running tests'
+        required: true
+        default: false
+        type: boolean
+      publish:
+        description: 'Publish to GitHub Packages'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: maven
+    - name: Validate
+      run: mvn validate
+    - name: Check for System.out.println
+      run: |
+        echo "Checking for direct System.out.println usage..."
+        # Grep will exit with non-zero if no match is found, which is what we want
+        ! grep -r --include="*.java" "System.out.println" src/main/java || {
+          echo "::error::Found direct System.out.println usage. Please use proper logging instead."
+          exit 1
+        }
+
+  build:
+    name: Build and Test on ${{ matrix.os }}
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: maven
+    - name: Build and Test on ${{ matrix.os }}
+      shell: bash
+      run: |
+        if [[ "${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_tests == 'true' }}" == "true" ]]; then
+          mvn package -DskipTests
+        else
+          mvn package jacoco:report
+        fi
+    - name: Upload test reports
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-reports-${{ matrix.os }}
+        path: target/surefire-reports/*.xml
+    
+    - name: Upload coverage report
+      if: matrix.os == 'ubuntu-latest' && (success() || failure())
+      uses: actions/upload-artifact@v3
+      with:
+        name: jacoco-report
+        path: |
+          target/site/jacoco/
+          target/site/jacoco.xml
+          target/jacoco.exec
+    - name: Run Karate Tests
+      if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.skip_tests != 'true' }}
+      shell: bash
+      run: |
+        echo "Running Karate tests on ${{ matrix.os }}..."
+        mvn verify -Dtest=karate.KarateRunner#testParallel
+    - name: Upload Karate reports
+      if: success() || failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: karate-reports-${{ matrix.os }}
+        path: |
+          target/karate-reports/**/*.html
+          target/karate-reports/*.xml
+    - name: Publish Karate Test Results
+      if: success() || failure()
+      uses: mikepenz/action-junit-report@v3
+      with:
+        report_paths: 'target/karate-reports/*.xml'
+        check_name: 'Karate Test Report (${{ matrix.os }})'
+    - name: Version consistency check
+      shell: bash
+      run: |
+        echo "Checking version consistency on ${{ matrix.os }}..."
+        # Platform-independent way to extract version from pom.xml using Maven
+        POM_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+        
+        # Get JAR path in a platform-independent way
+        if [ "${{ matrix.os }}" == "windows-latest" ]; then
+          JAR_PATH=$(find target -name "ftoc-*jar-with-dependencies.jar" | head -1)
+        else
+          JAR_PATH=$(find target -name "ftoc-*jar-with-dependencies.jar" | head -1)
+        fi
+        
+        # Extract runtime version from the JAR
+        JAR_VERSION=$(java -jar $JAR_PATH --version | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
+        
+        echo "POM version: $POM_VERSION"
+        echo "JAR version: $JAR_VERSION"
+        
+        if [[ "$POM_VERSION" != "$JAR_VERSION" ]]; then
+          echo "::error::Version mismatch between pom.xml ($POM_VERSION) and runtime version ($JAR_VERSION)"
+          exit 1
+        fi
+    - name: Upload built artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ftoc-jar-${{ matrix.os }}
+        path: target/ftoc-*.jar
+
+  coverage-report:
+    name: Process Code Coverage
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Download coverage report
+      uses: actions/download-artifact@v3
+      with:
+        name: jacoco-report
+        path: ./jacoco-report/
+    
+    - name: Generate coverage report
+      uses: cicirello/jacoco-badge-generator@v2
+      with:
+        jacoco-csv-file: ./jacoco-report/jacoco.csv
+        badges-directory: .github/badges
+        generate-coverage-badge: true
+        generate-branches-badge: true
+        generate-summary: true
+    
+    - name: Upload coverage badges
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-badges
+        path: .github/badges
+    
+    - name: Publish coverage summary
+      run: |
+        echo "### Code Coverage Summary" >> $GITHUB_STEP_SUMMARY
+        cat .github/badges/coverage-summary.json | jq -r '.coverage | "- **Line Coverage**: \(.covered)/\(.total) lines (\(.percentage)%)"' >> $GITHUB_STEP_SUMMARY
+        cat .github/badges/coverage-summary.json | jq -r '.branches | "- **Branch Coverage**: \(.covered)/\(.total) branches (\(.percentage)%)"' >> $GITHUB_STEP_SUMMARY
+        echo "- **Classes**: $(cat .github/badges/coverage-summary.json | jq -r '.classes')" >> $GITHUB_STEP_SUMMARY
+        echo "- **Coverage Trend**: $([ -f .github/badges/coverage-trend.json ] && cat .github/badges/coverage-trend.json | jq -r '.coverage.change' || echo 'Unknown')" >> $GITHUB_STEP_SUMMARY
+
+    - name: Update README badge
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        COVERAGE=$(cat .github/badges/jacoco.svg)
+        echo "$COVERAGE" > .github/badges/coverage.svg
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .github/badges/coverage.svg
+        git commit -m "Update coverage badge [skip ci]" || echo "No changes to commit"
+        git push
+        
+    - name: Comment on PR with coverage changes
+      if: github.event_name == 'pull_request'
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: code-coverage
+        message: |
+          ### Code Coverage Report 📊
+          
+          #### Coverage Summary
+          $(cat .github/badges/coverage-summary.json | jq -r '.coverage | "- **Line Coverage**: \(.covered)/\(.total) lines (\(.percentage)%)"')
+          $(cat .github/badges/coverage-summary.json | jq -r '.branches | "- **Branch Coverage**: \(.covered)/\(.total) branches (\(.percentage)%)"')
+          - **Classes**: $(cat .github/badges/coverage-summary.json | jq -r '.classes')
+          
+          #### Coverage Changes
+          $([ -f .github/badges/coverage-trend.json ] && cat .github/badges/coverage-trend.json | jq -r '.coverage | "- **Line Coverage Change**: \(.change)%"' || echo "- **Line Coverage Change**: baseline")
+          $([ -f .github/badges/coverage-trend.json ] && cat .github/badges/coverage-trend.json | jq -r '.branches | "- **Branch Coverage Change**: \(.change)%"' || echo "- **Branch Coverage Change**: baseline")
+          
+          <details>
+          <summary>Files with changes to coverage</summary>
+          
+          $([ -f .github/badges/coverage-trend.json ] && cat .github/badges/coverage-trend.json | jq -r '.modifiedFiles | map("- " + . + ": " + .percentageChange + "%") | join("\n")' || echo "No data available")
+          
+          </details>
+
+  security-scan:
+    name: Security Vulnerability Scan
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Download built artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: ftoc-jar-ubuntu-latest
+        path: target/
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: maven
+    - name: OWASP Dependency Check
+      run: |
+        echo "Running OWASP Dependency Check..."
+        mvn org.owasp:dependency-check-maven:check
+      env:
+        NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+    - name: Upload dependency check report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-check-report
+        path: target/dependency-check-report.html
+    - name: Check for vulnerabilities
+      id: vulnerability_check
+      run: |
+        echo "Checking for vulnerabilities..."
+        if grep -q "One or more dependencies were identified with known vulnerabilities" target/dependency-check-report.html; then
+          echo "::warning::Vulnerabilities found in dependencies. See the dependency check report for details."
+          echo "has_vulnerabilities=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_vulnerabilities=false" >> $GITHUB_OUTPUT
+        fi
+    - name: Publish Security Report to GitHub Security Tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: success() || failure()
+      with:
+        sarif_file: target/dependency-check-report.sarif
+        category: dependency-check
+    - name: Send Security Scan Notification
+      uses: 8398a7/action-slack@v3
+      if: steps.vulnerability_check.outputs.has_vulnerabilities == 'true' && secrets.SLACK_WEBHOOK_URL != ''
+      with:
+        status: 'warning'
+        fields: repo
+        custom_payload: |
+          {
+            "attachments": [{
+              "color": "warning",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":warning: *Security Alert*: Vulnerabilities found in dependencies\n*Repository:* ${{ github.repository }}\n*Details:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Security Report>"
+                  }
+                }
+              ]
+            }]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  analyze-features:
+    name: Analyze Feature Files
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.run_analysis == 'true'
+    steps:
+    - uses: actions/checkout@v3
+    - name: Download built artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: ftoc-jar-ubuntu-latest
+        path: target/
+    - name: Make JAR executable
+      run: chmod +x target/ftoc-*.jar
+    - name: Analyze feature files
+      run: |
+        JAR_PATH=$(find target -name "ftoc-*.jar" | grep -v "sources" | grep -v "javadoc" | head -1)
+        java -jar $JAR_PATH \
+          --toc-format junit \
+          --tag-quality-format junit \
+          --anti-pattern-format junit \
+          --concordance-format junit \
+          --include-tags P0,P1 \
+          --directory src/test/resources/ftoc/test-feature-files \
+          --output-directory target/ftoc-analysis
+    - name: Upload analysis results
+      uses: actions/upload-artifact@v3
+      with:
+        name: feature-analysis
+        path: target/ftoc-analysis/*.xml
+    - name: Publish Analysis Report
+      uses: mikepenz/action-junit-report@v3
+      if: always()
+      with:
+        report_paths: 'target/ftoc-analysis/*.xml'
+        check_name: 'Feature Quality Report'
+        fail_on_failure: false
+
+  publish:
+    name: Publish to GitHub Packages
+    needs: [build, analyze-features]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true'))
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: maven
+        server-id: github
+        server-username: GITHUB_ACTOR
+        server-password: GITHUB_TOKEN
+    - name: Download Linux build artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: ftoc-jar-ubuntu-latest
+        path: target/linux/
+    - name: Download macOS build artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: ftoc-jar-macos-latest
+        path: target/macos/
+    - name: Download Windows build artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: ftoc-jar-windows-latest
+        path: target/windows/
+    - name: Prepare artifacts for publish
+      run: |
+        mkdir -p target/publish
+        cp target/linux/ftoc-*-jar-with-dependencies.jar target/publish/ftoc-linux.jar
+        cp target/macos/ftoc-*-jar-with-dependencies.jar target/publish/ftoc-macos.jar
+        cp target/windows/ftoc-*-jar-with-dependencies.jar target/publish/ftoc-windows.jar
+        # Also copy a generic version for backward compatibility
+        cp target/linux/ftoc-*-jar-with-dependencies.jar target/
+    - name: Publish to GitHub Packages
+      run: mvn deploy -DskipTests
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
+    name: Create Release
+    needs: [publish]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+    - uses: actions/checkout@v3
+    - name: Download cross-platform artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: ./artifacts/
+    - name: Prepare release assets
+      run: |
+        # Create directory for release assets
+        mkdir -p ./release
+        # Copy platform-specific JARs
+        cp ./artifacts/ftoc-jar-ubuntu-latest/ftoc-*-jar-with-dependencies.jar ./release/ftoc-linux.jar
+        cp ./artifacts/ftoc-jar-macos-latest/ftoc-*-jar-with-dependencies.jar ./release/ftoc-macos.jar
+        cp ./artifacts/ftoc-jar-windows-latest/ftoc-*-jar-with-dependencies.jar ./release/ftoc-windows.jar
+        # Also create a generic version for backward compatibility
+        cp ./artifacts/ftoc-jar-ubuntu-latest/ftoc-*-jar-with-dependencies.jar ./release/ftoc.jar
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+        body: |
+          ## FTOC Release ${{ github.ref_name }}
+          
+          Automated release created by GitHub Actions
+          
+          ### Platform-Specific Builds
+          
+          This release includes cross-platform builds:
+          
+          - **Linux**: Download [ftoc-linux.jar](https://github.com/heymumford/ftoc/releases/download/${{ github.ref_name }}/ftoc-linux.jar)
+          - **macOS**: Download [ftoc-macos.jar](https://github.com/heymumford/ftoc/releases/download/${{ github.ref_name }}/ftoc-macos.jar)
+          - **Windows**: Download [ftoc-windows.jar](https://github.com/heymumford/ftoc/releases/download/${{ github.ref_name }}/ftoc-windows.jar)
+          - **Generic** (Linux-based): Download [ftoc.jar](https://github.com/heymumford/ftoc/releases/download/${{ github.ref_name }}/ftoc.jar)
+          
+          ### How to use
+          
+          Download the appropriate JAR for your platform and follow installation instructions in the [documentation](https://github.com/heymumford/ftoc/tree/main/docs/user/usage.md).
+    - name: Upload Linux Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./release/ftoc-linux.jar
+        asset_name: ftoc-linux.jar
+        asset_content_type: application/java-archive
+    - name: Upload macOS Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./release/ftoc-macos.jar
+        asset_name: ftoc-macos.jar
+        asset_content_type: application/java-archive
+    - name: Upload Windows Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./release/ftoc-windows.jar
+        asset_name: ftoc-windows.jar
+        asset_content_type: application/java-archive
+    - name: Upload Generic Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./release/ftoc.jar
+        asset_name: ftoc.jar
+        asset_content_type: application/java-archive
+        
+  notify:
+    name: Send Notifications
+    needs: [release, publish, analyze-features]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check Build Status
+      id: status
+      run: |
+        if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+          echo "status=failure" >> $GITHUB_OUTPUT
+        else
+          echo "status=success" >> $GITHUB_OUTPUT
+        fi
+    - name: Publish Build Status
+      run: |
+        echo "Build Status: ${{ steps.status.outputs.status }}"
+        echo "View details in GitHub Actions: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+    - name: Send Slack notification
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ steps.status.outputs.status }}
+        fields: repo,message,commit,author,action,workflow
+        mention: here
+        if_mention: failure
+        custom_payload: |
+          {
+            "attachments": [{
+              "color": "${{ steps.status.outputs.status == 'success' && 'good' || steps.status.outputs.status == 'failure' && 'danger' || 'warning' }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ steps.status.outputs.status == 'success' && ':white_check_mark:' || steps.status.outputs.status == 'failure' && ':x:' || ':warning:' }} *${{ github.repository }}*: Build ${{ steps.status.outputs.status }}\n*Commit:* <${{ github.event.repository.html_url }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Author:* ${{ github.event.head_commit.author.name }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.workflow }}>"
+                  }
+                }
+              ]
+            }]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      if: always() && github.event_name != 'pull_request' && (success() || failure()) && secrets.SLACK_WEBHOOK_URL != ''
+    - name: Update Deployment Status
+      run: |
+        if [[ "${{ github.event_name }}" == "push" && "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" ]]; then
+          echo "Deployment completed for version ${{ github.ref_name }}"
+          echo "Artifacts published to GitHub Packages and releases"
+        fi
