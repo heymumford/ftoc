@@ -28,6 +28,8 @@ public class FtocUtility {
     private final FeatureParser parser;
     private final TocFormatter formatter;
     private TocFormatter.Format outputFormat;
+    private final List<String> includeTagFilters;
+    private final List<String> excludeTagFilters;
 
     public FtocUtility() {
         this.featureFiles = new ArrayList<>();
@@ -36,6 +38,8 @@ public class FtocUtility {
         this.parser = new FeatureParser();
         this.formatter = new TocFormatter();
         this.outputFormat = TocFormatter.Format.PLAIN_TEXT; // Default format
+        this.includeTagFilters = new ArrayList<>();
+        this.excludeTagFilters = new ArrayList<>();
     }
 
     public void initialize() {
@@ -45,6 +49,44 @@ public class FtocUtility {
     public void setOutputFormat(TocFormatter.Format format) {
         this.outputFormat = format;
         logger.debug("Output format set to: {}", format);
+    }
+    
+    /**
+     * Add a tag to include in the filtered output.
+     * Scenarios with at least one of the included tags will appear in the TOC.
+     * If no include filters are specified, all scenarios will be included (unless excluded).
+     * 
+     * @param tag The tag to include (e.g., "@P0", "@Smoke")
+     */
+    public void addIncludeTagFilter(String tag) {
+        if (!tag.startsWith("@")) {
+            tag = "@" + tag;
+        }
+        includeTagFilters.add(tag);
+        logger.debug("Added include tag filter: {}", tag);
+    }
+    
+    /**
+     * Add a tag to exclude from the filtered output.
+     * Scenarios with any of the excluded tags will be removed from the TOC.
+     * 
+     * @param tag The tag to exclude (e.g., "@Flaky", "@Debug")
+     */
+    public void addExcludeTagFilter(String tag) {
+        if (!tag.startsWith("@")) {
+            tag = "@" + tag;
+        }
+        excludeTagFilters.add(tag);
+        logger.debug("Added exclude tag filter: {}", tag);
+    }
+    
+    /**
+     * Clear all tag filters (both include and exclude).
+     */
+    public void clearTagFilters() {
+        includeTagFilters.clear();
+        excludeTagFilters.clear();
+        logger.debug("Cleared all tag filters");
     }
 
     public void processDirectory(String directoryPath) {
@@ -122,7 +164,17 @@ public class FtocUtility {
         }
         
         logger.info("Generating table of contents...");
-        String toc = formatter.generateToc(parsedFeatures, outputFormat);
+        
+        // Apply tag filters if they are set
+        String toc;
+        if (!includeTagFilters.isEmpty() || !excludeTagFilters.isEmpty()) {
+            logger.info("Applying tag filters - include: {}, exclude: {}", 
+                    includeTagFilters, excludeTagFilters);
+            toc = formatter.generateToc(parsedFeatures, outputFormat, includeTagFilters, excludeTagFilters);
+        } else {
+            toc = formatter.generateToc(parsedFeatures, outputFormat);
+        }
+        
         System.out.println("\n" + toc);
         logger.info("Table of contents generated successfully.");
     }
@@ -142,10 +194,14 @@ public class FtocUtility {
     
     private static void printHelp() {
         System.out.println("FTOC Utility version " + VERSION);
-        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--version | -v] [--help]");
+        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--version | -v] [--help]");
         System.out.println("Options:");
         System.out.println("  -d <directory>      Specify the directory to analyze (default: current directory)");
         System.out.println("  -f <format>         Specify output format (text, md, html, json) (default: text)");
+        System.out.println("  --tags <tags>       Include only scenarios with at least one of these tags");
+        System.out.println("                      Comma-separated list, e.g. \"@P0,@Smoke\"");
+        System.out.println("  --exclude-tags <tags> Exclude scenarios with any of these tags");
+        System.out.println("                      Comma-separated list, e.g. \"@Flaky,@Debug\"");
         System.out.println("  --version, -v       Display version information");
         System.out.println("  --help              Display this help message");
     }
@@ -164,6 +220,9 @@ public class FtocUtility {
         String directoryPath = ".";
         TocFormatter.Format format = TocFormatter.Format.PLAIN_TEXT;
         
+        FtocUtility ftoc = new FtocUtility();
+        ftoc.initialize();
+        
         for (int i = 0; i < args.length; i++) {
             if ("-d".equals(args[i]) && i + 1 < args.length) {
                 directoryPath = args[i + 1];
@@ -180,11 +239,21 @@ public class FtocUtility {
                     format = TocFormatter.Format.PLAIN_TEXT;
                 }
                 i++; // Skip the next argument
+            } else if ("--tags".equals(args[i]) && i + 1 < args.length) {
+                String[] tags = args[i + 1].split(",");
+                for (String tag : tags) {
+                    ftoc.addIncludeTagFilter(tag.trim());
+                }
+                i++; // Skip the next argument
+            } else if ("--exclude-tags".equals(args[i]) && i + 1 < args.length) {
+                String[] tags = args[i + 1].split(",");
+                for (String tag : tags) {
+                    ftoc.addExcludeTagFilter(tag.trim());
+                }
+                i++; // Skip the next argument
             }
         }
-
-        FtocUtility ftoc = new FtocUtility();
-        ftoc.initialize();
+        
         ftoc.setOutputFormat(format);
         ftoc.processDirectory(directoryPath);
     }
