@@ -40,3 +40,12 @@ Feature: Testing FTOC utility using its own feature files
     And I run the utility on the "src/test/resources/ftoc/features" directory
     Then the TOC should only contain scenarios with tags "@P0" or "@P1"
     And the TOC should not contain scenarios with tag "@InitialTest"
+    
+  @TagQualityAnalysis @P1
+  Scenario: Generate tag quality analysis report
+    Given the ftoc utility is initialized
+    When I enable tag quality analysis
+    And I set tag quality format to "text"
+    And I run the utility on the "src/test/resources/ftoc/test-feature-files" directory
+    Then a tag quality report should be generated
+    And the tag quality report should contain warnings

@@ -1,6 +1,8 @@
 package com.heymumford.ftoc;
 
+import com.heymumford.ftoc.analyzer.TagQualityAnalyzer;
 import com.heymumford.ftoc.formatter.ConcordanceFormatter;
+import com.heymumford.ftoc.formatter.TagQualityFormatter;
 import com.heymumford.ftoc.formatter.TocFormatter;
 import com.heymumford.ftoc.model.Feature;
 import com.heymumford.ftoc.parser.FeatureParser;
@@ -29,10 +31,13 @@ public class FtocUtility {
     private final FeatureParser parser;
     private final TocFormatter tocFormatter;
     private final ConcordanceFormatter concordanceFormatter;
+    private final TagQualityFormatter tagQualityFormatter;
     private TocFormatter.Format outputFormat;
     private ConcordanceFormatter.Format concordanceFormat;
+    private TagQualityFormatter.Format tagQualityFormat;
     private final List<String> includeTagFilters;
     private final List<String> excludeTagFilters;
+    private boolean analyzeTagQuality;
 
     public FtocUtility() {
         this.featureFiles = new ArrayList<>();
@@ -41,10 +46,13 @@ public class FtocUtility {
         this.parser = new FeatureParser();
         this.tocFormatter = new TocFormatter();
         this.concordanceFormatter = new ConcordanceFormatter();
+        this.tagQualityFormatter = new TagQualityFormatter();
         this.outputFormat = TocFormatter.Format.PLAIN_TEXT; // Default format
         this.concordanceFormat = ConcordanceFormatter.Format.PLAIN_TEXT; // Default format
+        this.tagQualityFormat = TagQualityFormatter.Format.PLAIN_TEXT; // Default format
         this.includeTagFilters = new ArrayList<>();
         this.excludeTagFilters = new ArrayList<>();
+        this.analyzeTagQuality = false;
     }
 
     public void initialize() {
@@ -59,6 +67,16 @@ public class FtocUtility {
     public void setConcordanceFormat(ConcordanceFormatter.Format format) {
         this.concordanceFormat = format;
         logger.debug("Concordance format set to: {}", format);
+    }
+    
+    public void setTagQualityFormat(TagQualityFormatter.Format format) {
+        this.tagQualityFormat = format;
+        logger.debug("Tag quality format set to: {}", format);
+    }
+    
+    public void setAnalyzeTagQuality(boolean analyze) {
+        this.analyzeTagQuality = analyze;
+        logger.debug("Tag quality analysis set to: {}", analyze);
     }
     
     /**
@@ -143,6 +161,11 @@ public class FtocUtility {
             // Generate reports
             generateConcordanceReport();
             
+            // Generate tag quality report if requested
+            if (analyzeTagQuality) {
+                generateTagQualityReport();
+            }
+            
             // Generate TOC only if not in concordance-only mode
             if (!generateConcordanceOnly) {
                 generateTableOfContents();
@@ -196,6 +219,29 @@ public class FtocUtility {
         logger.info("Concordance report generated successfully.");
     }
     
+    private void generateTagQualityReport() {
+        logger.info("Generating tag quality analysis report...");
+        
+        if (parsedFeatures.isEmpty()) {
+            logger.warn("No features to analyze for tag quality.");
+            return;
+        }
+        
+        // Create a tag quality analyzer with the current data
+        TagQualityAnalyzer analyzer = new TagQualityAnalyzer(tagConcordance, parsedFeatures);
+        
+        // Perform the analysis
+        List<TagQualityAnalyzer.Warning> warnings = analyzer.analyzeTagQuality();
+        
+        // Generate a report using the formatter
+        String report = tagQualityFormatter.generateTagQualityReport(warnings, tagQualityFormat);
+        
+        // Output the report to the console
+        System.out.println("\n" + report);
+        
+        logger.info("Tag quality analysis found {} potential issues.", warnings.size());
+    }
+    
     private void generateTableOfContents() {
         if (parsedFeatures.isEmpty()) {
             logger.warn("No features to include in table of contents.");
@@ -233,7 +279,7 @@ public class FtocUtility {
     
     private static void printHelp() {
         System.out.println("FTOC Utility version " + VERSION);
-        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--concordance-format <format>] [--version | -v] [--help]");
+        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--concordance-format <format>] [--analyze-tags] [--tag-quality-format <format>] [--version | -v] [--help]");
         System.out.println("Options:");
         System.out.println("  -d <directory>      Specify the directory to analyze (default: current directory)");
         System.out.println("  -f <format>         Specify TOC output format (text, md, html, json) (default: text)");
@@ -244,6 +290,9 @@ public class FtocUtility {
         System.out.println("  --concordance       Generate detailed tag concordance report instead of TOC");
         System.out.println("  --concordance-format <format>");
         System.out.println("                      Specify concordance output format (text, md, html, json) (default: text)");
+        System.out.println("  --analyze-tags      Perform tag quality analysis and generate warnings report");
+        System.out.println("  --tag-quality-format <format>");
+        System.out.println("                      Specify tag quality report format (text, md, html, json) (default: text)");
         System.out.println("  --version, -v       Display version information");
         System.out.println("  --help              Display this help message");
     }
@@ -262,7 +311,9 @@ public class FtocUtility {
         String directoryPath = ".";
         TocFormatter.Format tocFormat = TocFormatter.Format.PLAIN_TEXT;
         ConcordanceFormatter.Format concordanceFormat = ConcordanceFormatter.Format.PLAIN_TEXT;
+        TagQualityFormatter.Format tagQualityFormat = TagQualityFormatter.Format.PLAIN_TEXT;
         boolean generateConcordanceOnly = false;
+        boolean analyzeTagQuality = false;
         
         FtocUtility ftoc = new FtocUtility();
         ftoc.initialize();
@@ -297,6 +348,20 @@ public class FtocUtility {
                 i++; // Skip the next argument
             } else if ("--concordance".equals(args[i])) {
                 generateConcordanceOnly = true;
+            } else if ("--analyze-tags".equals(args[i])) {
+                analyzeTagQuality = true;
+            } else if ("--tag-quality-format".equals(args[i]) && i + 1 < args.length) {
+                String formatStr = args[i + 1].toLowerCase();
+                if ("md".equals(formatStr) || "markdown".equals(formatStr)) {
+                    tagQualityFormat = TagQualityFormatter.Format.MARKDOWN;
+                } else if ("html".equals(formatStr)) {
+                    tagQualityFormat = TagQualityFormatter.Format.HTML;
+                } else if ("json".equals(formatStr)) {
+                    tagQualityFormat = TagQualityFormatter.Format.JSON;
+                } else {
+                    tagQualityFormat = TagQualityFormatter.Format.PLAIN_TEXT;
+                }
+                i++; // Skip the next argument
             } else if ("--tags".equals(args[i]) && i + 1 < args.length) {
                 String[] tags = args[i + 1].split(",");
                 for (String tag : tags) {
@@ -314,6 +379,8 @@ public class FtocUtility {
         
         ftoc.setOutputFormat(tocFormat);
         ftoc.setConcordanceFormat(concordanceFormat);
+        ftoc.setTagQualityFormat(tagQualityFormat);
+        ftoc.setAnalyzeTagQuality(analyzeTagQuality);
         
         // Process the directory and generate concordance data
         ftoc.processDirectory(directoryPath, generateConcordanceOnly);

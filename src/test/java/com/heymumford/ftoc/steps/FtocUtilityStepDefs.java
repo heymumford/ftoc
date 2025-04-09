@@ -1,6 +1,7 @@
 package com.heymumford.ftoc.steps;
 
 import com.heymumford.ftoc.FtocUtility;
+import com.heymumford.ftoc.formatter.TagQualityFormatter;
 import com.heymumford.ftoc.formatter.TocFormatter;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
@@ -759,5 +760,62 @@ public class FtocUtilityStepDefs {
         // Just check that the tag is in the output somewhere
         assertTrue(capturedOutput.contains(tag),
                   "Output doesn't mention the excluded tag: " + tag);
+    }
+    
+    @When("I enable tag quality analysis")
+    public void enableTagQualityAnalysis() {
+        ftoc.setAnalyzeTagQuality(true);
+        logger.info("Enabled tag quality analysis");
+    }
+    
+    @When("I set tag quality format to {string}")
+    public void setTagQualityFormat(String format) {
+        TagQualityFormatter.Format qualityFormat;
+        switch (format.toLowerCase()) {
+            case "md":
+            case "markdown":
+                qualityFormat = TagQualityFormatter.Format.MARKDOWN;
+                break;
+            case "html":
+                qualityFormat = TagQualityFormatter.Format.HTML;
+                break;
+            case "json":
+                qualityFormat = TagQualityFormatter.Format.JSON;
+                break;
+            default:
+                qualityFormat = TagQualityFormatter.Format.PLAIN_TEXT;
+        }
+        
+        ftoc.setTagQualityFormat(qualityFormat);
+        logger.info("Set tag quality format to: {}", qualityFormat);
+    }
+    
+    @Then("a tag quality report should be generated")
+    public void verifyTagQualityReportGenerated() {
+        logger.info("Checking for tag quality report generation");
+        assertNotNull(capturedOutput, "No output was captured");
+        
+        // Check for tag quality report header
+        boolean hasQualityReport = capturedOutput.contains("TAG QUALITY REPORT") || 
+                                  capturedOutput.contains("Tag Quality Report") ||
+                                  capturedOutput.contains("tagQualityReport");
+        
+        logger.info("Has tag quality report: {}", hasQualityReport);
+        assertTrue(hasQualityReport, "Output does not contain a tag quality report");
+    }
+    
+    @Then("the tag quality report should contain warnings")
+    public void verifyTagQualityReportWarnings() {
+        logger.info("Checking for warnings in tag quality report");
+        assertNotNull(capturedOutput, "No output was captured");
+        
+        // Check for warning-related terms
+        boolean hasWarnings = capturedOutput.contains("warning") || 
+                             capturedOutput.contains("Warning") ||
+                             capturedOutput.contains("MISSING_") ||
+                             capturedOutput.contains("TAG_TYPO");
+        
+        logger.info("Has warnings in report: {}", hasWarnings);
+        assertTrue(hasWarnings, "Tag quality report does not contain any warnings");
     }
 }
