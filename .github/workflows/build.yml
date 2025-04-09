@@ -1,0 +1,57 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: Extract version for tagging
+      id: get-version
+      run: |
+        VERSION=$(xmlstarlet sel -N pom="http://maven.apache.org/POM/4.0.0" -t -v "/pom:project/pom:version" pom.xml)
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        
+    - name: Build with Maven
+      run: mvn -B clean package
+      
+    - name: Run Tests
+      run: mvn -B test
+      
+    - name: Verify version consistency
+      run: |
+        JAR_VERSION=$(java -jar target/ftoc-${{ env.VERSION }}-jar-with-dependencies.jar --version | awk '{print $NF}')
+        if [ "$JAR_VERSION" != "${{ env.VERSION }}" ]; then
+          echo "Version mismatch: POM=${{ env.VERSION }}, JAR=$JAR_VERSION"
+          exit 1
+        fi
+        echo "✅ Version consistency check passed: $JAR_VERSION"
+        
+    - name: Create Release (only on tags)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          target/ftoc-${{ env.VERSION }}-jar-with-dependencies.jar
+          target/ftoc-${{ env.VERSION }}.jar
+        name: FTOC Release ${{ env.VERSION }}
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
