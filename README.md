@@ -91,6 +91,7 @@ Managing large suites of Cucumber tests presents challenges:
 - [JUnit Report Integration](docs/user/junit-report-integration.md)
 - [Docker Usage](docs/user/docker-usage.md)
 - [Cross-Platform Usage](docs/user/cross-platform.md)
+- [Karate Syntax Guide](docs/user/KARATE_SYNTAX.md)
 
 ### Developer Documentation
 
