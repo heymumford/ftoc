@@ -8,6 +8,8 @@ import com.heymumford.ftoc.formatter.TagQualityFormatter;
 import com.heymumford.ftoc.formatter.TocFormatter;
 import com.heymumford.ftoc.model.Feature;
 import com.heymumford.ftoc.parser.FeatureParser;
+import com.heymumford.ftoc.parser.FeatureParserFactory;
+import com.heymumford.ftoc.parser.KarateParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +32,7 @@ public class FtocUtility {
     private final List<File> featureFiles;
     private final Map<String, Integer> tagConcordance;
     private final List<Feature> parsedFeatures;
-    private final FeatureParser parser;
+    private FeatureParser parser;
     private final TocFormatter tocFormatter;
     private final ConcordanceFormatter concordanceFormatter;
     private final TagQualityFormatter tagQualityFormatter;
@@ -43,12 +45,14 @@ public class FtocUtility {
     private final List<String> excludeTagFilters;
     private boolean analyzeTagQuality;
     private boolean detectAntiPatterns;
+    private boolean enablePerformanceMonitoring;
+    private com.heymumford.ftoc.config.WarningConfiguration warningConfig;
 
     public FtocUtility() {
         this.featureFiles = new ArrayList<>();
         this.tagConcordance = new HashMap<>();
         this.parsedFeatures = new ArrayList<>();
-        this.parser = new FeatureParser();
+        this.parser = null; // Will be initialized when needed
         this.tocFormatter = new TocFormatter();
         this.concordanceFormatter = new ConcordanceFormatter();
         this.tagQualityFormatter = new TagQualityFormatter();
@@ -61,10 +65,18 @@ public class FtocUtility {
         this.excludeTagFilters = new ArrayList<>();
         this.analyzeTagQuality = false;
         this.detectAntiPatterns = false;
+        this.enablePerformanceMonitoring = false;
+        this.warningConfig = new com.heymumford.ftoc.config.WarningConfiguration();
     }
 
     public void initialize() {
         logger.info("FTOC utility version {} initialized.", VERSION);
+        
+        // Add JVM info for performance monitoring
+        Runtime runtime = Runtime.getRuntime();
+        logger.debug("JVM information - Max Memory: {} MB, Available Processors: {}", 
+                runtime.maxMemory() / (1024 * 1024),
+                runtime.availableProcessors());
     }
 
     public void setOutputFormat(TocFormatter.Format format) {
@@ -92,9 +104,45 @@ public class FtocUtility {
         logger.debug("Anti-pattern detection set to: {}", detect);
     }
     
+    /**
+     * Enable or disable performance monitoring.
+     * 
+     * @param enable Whether to enable performance monitoring
+     */
+    public void setPerformanceMonitoring(boolean enable) {
+        this.enablePerformanceMonitoring = enable;
+        logger.debug("Performance monitoring set to: {}", enable);
+    }
+    
     public void setAntiPatternFormat(AntiPatternFormatter.Format format) {
         this.antiPatternFormat = format;
         logger.debug("Anti-pattern format set to: {}", format);
+    }
+    
+    /**
+     * Set a custom warning configuration file.
+     * This will reload the warning configuration from the specified file.
+     * 
+     * @param configFilePath Path to the configuration file
+     */
+    public void setWarningConfigFile(String configFilePath) {
+        logger.debug("Loading warning configuration from: {}", configFilePath);
+        this.warningConfig = new com.heymumford.ftoc.config.WarningConfiguration(configFilePath);
+        
+        if (this.warningConfig.getConfigPath() != null) {
+            logger.info("Warning configuration loaded from: {}", this.warningConfig.getConfigPath());
+        } else {
+            logger.warn("Failed to load warning configuration from: {}. Using defaults.", configFilePath);
+        }
+    }
+    
+    /**
+     * Get a summary of the current warning configuration.
+     * 
+     * @return A summary string of the warning configuration
+     */
+    public String getWarningConfigSummary() {
+        return warningConfig.getSummary();
     }
     
     /**
@@ -167,13 +215,45 @@ public class FtocUtility {
 
             featureFiles.addAll(foundFeatureFiles);
             
-            // Parse all feature files
-            for (File file : featureFiles) {
-                Feature feature = parser.parseFeatureFile(file);
-                parsedFeatures.add(feature);
+            // Enable performance monitoring if requested
+            if (enablePerformanceMonitoring) {
+                com.heymumford.ftoc.performance.PerformanceMonitor.setEnabled(true);
+                com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("total");
+            }
+            
+            boolean useParallel = com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled();
+            
+            if (useParallel && featureFiles.size() > 5) {
+                // Use parallel processing for larger repositories
+                logger.info("Using parallel processing for {} feature files", featureFiles.size());
+                com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("parallel_processing");
                 
-                // Update tag concordance from parsed feature
-                updateTagConcordanceFromFeature(feature);
+                try {
+                    com.heymumford.ftoc.performance.ParallelFeatureProcessor processor = 
+                            new com.heymumford.ftoc.performance.ParallelFeatureProcessor();
+                    
+                    // Process files in parallel and get results
+                    parsedFeatures.addAll(processor.processFeatureFiles(
+                            featureFiles, 
+                            progress -> logger.debug("Processing progress: {}%", progress)));
+                    
+                    // Shutdown the processor
+                    processor.shutdown();
+                    
+                    // Update tag concordance from all parsed features
+                    for (Feature feature : parsedFeatures) {
+                        updateTagConcordanceFromFeature(feature);
+                    }
+                } catch (Exception e) {
+                    logger.error("Error during parallel processing: {}", e.getMessage());
+                    logger.info("Falling back to sequential processing");
+                    // Clear and fallback to sequential processing
+                    parsedFeatures.clear();
+                    processFeatureFilesSequentially();
+                }
+            } else {
+                // Use sequential processing for smaller repositories
+                processFeatureFilesSequentially();
             }
             
             // Generate reports
@@ -194,9 +274,65 @@ public class FtocUtility {
                 generateTableOfContents();
             }
             
+            // Report performance metrics if enabled
+            if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
+                com.heymumford.ftoc.performance.PerformanceMonitor.recordFinalMemory();
+                long totalDuration = com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("total");
+                logger.info("Total execution time: {} ms", totalDuration);
+                
+                String performanceSummary = com.heymumford.ftoc.performance.PerformanceMonitor.getSummary();
+                logger.info("Performance Summary:\n{}", performanceSummary);
+                System.out.println("\nPerformance Summary:\n" + performanceSummary);
+            }
+            
             logger.info("FTOC utility finished successfully.");
         } catch (IOException e) {
             logger.error("Error while running FTOC utility: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Process feature files sequentially (non-parallel version).
+     * This method is used for small file sets or as a fallback if parallel processing fails.
+     */
+    private void processFeatureFilesSequentially() {
+        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
+            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("sequential_processing");
+        }
+        
+        logger.info("Processing {} feature files sequentially", featureFiles.size());
+        
+        // Parse all feature files
+        int processedCount = 0;
+        for (File file : featureFiles) {
+            try {
+                // Use FeatureParserFactory to get the appropriate parser
+                if (parser == null) {
+                    logger.debug("Initializing feature parser");
+                }
+                FeatureParser fileParser = FeatureParserFactory.getParser(file);
+                Feature feature = fileParser.parseFeatureFile(file);
+                parsedFeatures.add(feature);
+                
+                // Update tag concordance from parsed feature
+                updateTagConcordanceFromFeature(feature);
+                
+                // Log progress for larger file sets
+                processedCount++;
+                if (featureFiles.size() > 20 && processedCount % 10 == 0) {
+                    logger.debug("Processed {}/{} files ({}%)", 
+                            processedCount, featureFiles.size(), 
+                            (int)((processedCount / (double)featureFiles.size()) * 100));
+                }
+                
+            } catch (Exception e) {
+                logger.error("Error processing file {}: {}", file.getName(), e.getMessage());
+            }
+        }
+        
+        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
+            long duration = com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("sequential_processing");
+            logger.info("Sequential processing completed in {} ms", duration);
         }
     }
 
@@ -229,6 +365,10 @@ public class FtocUtility {
     private void generateConcordanceReport() {
         logger.info("Generating tag concordance report...");
         
+        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
+            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("generate_concordance");
+        }
+        
         // Log basic stats to the logger (for backward compatibility)
         tagConcordance.forEach((tag, count) -> logger.info("Tag: {}, Count: {}", tag, count));
         
@@ -240,18 +380,26 @@ public class FtocUtility {
         System.out.println("\n" + report);
         
         logger.info("Concordance report generated successfully.");
+        
+        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
+            com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("generate_concordance");
+        }
     }
     
     private void generateTagQualityReport() {
         logger.info("Generating tag quality analysis report...");
+        
+        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
+            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("generate_tag_quality");
+        }
         
         if (parsedFeatures.isEmpty()) {
             logger.warn("No features to analyze for tag quality.");
             return;
         }
         
-        // Create a tag quality analyzer with the current data
-        TagQualityAnalyzer analyzer = new TagQualityAnalyzer(tagConcordance, parsedFeatures);
+        // Create a tag quality analyzer with the current data and warning configuration
+        TagQualityAnalyzer analyzer = new TagQualityAnalyzer(tagConcordance, parsedFeatures, warningConfig);
         
         // Perform the analysis
         List<TagQualityAnalyzer.Warning> warnings = analyzer.analyzeTagQuality();
@@ -263,18 +411,30 @@ public class FtocUtility {
         System.out.println("\n" + report);
         
         logger.info("Tag quality analysis found {} potential issues.", warnings.size());
+        
+        if (warningConfig.getConfigPath() != null) {
+            logger.debug("Using warning configuration from: {}", warningConfig.getConfigPath());
+        }
+        
+        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
+            com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("generate_tag_quality");
+        }
     }
     
     private void generateAntiPatternReport() {
         logger.info("Generating feature anti-pattern report...");
+        
+        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
+            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("generate_anti_pattern");
+        }
         
         if (parsedFeatures.isEmpty()) {
             logger.warn("No features to analyze for anti-patterns.");
             return;
         }
         
-        // Create an anti-pattern analyzer with the current features
-        FeatureAntiPatternAnalyzer analyzer = new FeatureAntiPatternAnalyzer(parsedFeatures);
+        // Create an anti-pattern analyzer with the current features and warning configuration
+        FeatureAntiPatternAnalyzer analyzer = new FeatureAntiPatternAnalyzer(parsedFeatures, warningConfig);
         
         // Perform the analysis
         List<FeatureAntiPatternAnalyzer.Warning> warnings = analyzer.analyzeAntiPatterns();
@@ -286,6 +446,14 @@ public class FtocUtility {
         System.out.println("\n" + report);
         
         logger.info("Anti-pattern analysis found {} potential issues.", warnings.size());
+        
+        if (warningConfig.getConfigPath() != null) {
+            logger.debug("Using warning configuration from: {}", warningConfig.getConfigPath());
+        }
+        
+        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
+            com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("generate_anti_pattern");
+        }
     }
     
     private void generateTableOfContents() {
@@ -295,6 +463,10 @@ public class FtocUtility {
         }
         
         logger.info("Generating table of contents...");
+        
+        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
+            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("generate_toc");
+        }
         
         // Apply tag filters if they are set
         String toc;
@@ -308,6 +480,10 @@ public class FtocUtility {
         
         System.out.println("\n" + toc);
         logger.info("Table of contents generated successfully.");
+        
+        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
+            com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("generate_toc");
+        }
     }
 
     private static String loadVersion() {
@@ -325,12 +501,12 @@ public class FtocUtility {
     
     private static void printHelp() {
         System.out.println("FTOC Utility version " + VERSION);
-        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--concordance-format <format>] [--analyze-tags] [--tag-quality-format <format>] [--detect-anti-patterns] [--anti-pattern-format <format>] [--format <format>] [--version | -v] [--help]");
+        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--concordance-format <format>] [--analyze-tags] [--tag-quality-format <format>] [--detect-anti-patterns] [--anti-pattern-format <format>] [--format <format>] [--config-file <file>] [--show-config] [--junit-report] [--performance] [--version | -v] [--help]");
         System.out.println("Options:");
         System.out.println("  -d <directory>      Specify the directory to analyze (default: current directory)");
-        System.out.println("  -f <format>         Specify TOC output format (text, md, html, json) (default: text)");
+        System.out.println("  -f <format>         Specify TOC output format (text, md, html, json, junit) (default: text)");
         System.out.println("                      Same as --format");
-        System.out.println("  --format <format>   Specify output format for all reports (text, md, html, json)");
+        System.out.println("  --format <format>   Specify output format for all reports (text, md, html, json, junit)");
         System.out.println("                      This is a shorthand to set all format options at once");
         System.out.println("  --tags <tags>       Include only scenarios with at least one of these tags");
         System.out.println("                      Comma-separated list, e.g. \"@P0,@Smoke\"");
@@ -338,14 +514,22 @@ public class FtocUtility {
         System.out.println("                      Comma-separated list, e.g. \"@Flaky,@Debug\"");
         System.out.println("  --concordance       Generate detailed tag concordance report instead of TOC");
         System.out.println("  --concordance-format <format>");
-        System.out.println("                      Specify concordance output format (text, md, html, json) (default: text)");
+        System.out.println("                      Specify concordance output format (text, md, html, json, junit) (default: text)");
         System.out.println("  --analyze-tags      Perform tag quality analysis and generate warnings report");
         System.out.println("  --tag-quality-format <format>");
-        System.out.println("                      Specify tag quality report format (text, md, html, json) (default: text)");
+        System.out.println("                      Specify tag quality report format (text, md, html, json, junit) (default: text)");
         System.out.println("  --detect-anti-patterns");
         System.out.println("                      Detect common anti-patterns in feature files and generate warnings");
         System.out.println("  --anti-pattern-format <format>");
-        System.out.println("                      Specify anti-pattern report format (text, md, html, json) (default: text)");
+        System.out.println("                      Specify anti-pattern report format (text, md, html, json, junit) (default: text)");
+        System.out.println("  --junit-report      Output all reports in JUnit XML format (for CI integration)");
+        System.out.println("                      This is a shorthand for setting all format options to junit");
+        System.out.println("  --config-file <file>");
+        System.out.println("                      Specify a custom warning configuration file");
+        System.out.println("                      (default: looks for .ftoc/config.yml, .ftoc.yml, etc.)");
+        System.out.println("  --show-config       Display the current warning configuration and exit");
+        System.out.println("  --performance       Enable performance monitoring and optimizations");
+        System.out.println("                      Will use parallel processing for large repositories");
         System.out.println("  --version, -v       Display version information");
         System.out.println("  --help              Display this help message");
     }
@@ -360,6 +544,24 @@ public class FtocUtility {
             System.out.println("FTOC Utility version " + VERSION);
             return;
         }
+        
+        // Process config file early if specified, so it can be used with --show-config
+        FtocUtility ftoc = new FtocUtility();
+        ftoc.initialize();
+        
+        // Check for config file option
+        for (int i = 0; i < args.length; i++) {
+            if ("--config-file".equals(args[i]) && i + 1 < args.length) {
+                ftoc.setWarningConfigFile(args[i + 1]);
+                break;
+            }
+        }
+        
+        // Check if we should just display the config and exit
+        if (Arrays.asList(args).contains("--show-config")) {
+            System.out.println(ftoc.getWarningConfigSummary());
+            return;
+        }
 
         String directoryPath = ".";
         TocFormatter.Format tocFormat = TocFormatter.Format.PLAIN_TEXT;
@@ -369,9 +571,7 @@ public class FtocUtility {
         boolean generateConcordanceOnly = false;
         boolean analyzeTagQuality = false;
         boolean detectAntiPatterns = false;
-        
-        FtocUtility ftoc = new FtocUtility();
-        ftoc.initialize();
+        boolean enablePerformance = false;
         
         for (int i = 0; i < args.length; i++) {
             if ("-d".equals(args[i]) && i + 1 < args.length) {
@@ -387,6 +587,8 @@ public class FtocUtility {
                     selectedFormat = TocFormatter.Format.HTML;
                 } else if ("json".equals(formatStr)) {
                     selectedFormat = TocFormatter.Format.JSON;
+                } else if ("junit".equals(formatStr) || "junit-xml".equals(formatStr) || "xml".equals(formatStr)) {
+                    selectedFormat = TocFormatter.Format.JUNIT_XML;
                 } else {
                     selectedFormat = TocFormatter.Format.PLAIN_TEXT;
                 }
@@ -398,6 +600,9 @@ public class FtocUtility {
                 antiPatternFormat = AntiPatternFormatter.Format.valueOf(selectedFormat.name());
                 
                 i++; // Skip the next argument
+            } else if ("--config-file".equals(args[i]) && i + 1 < args.length) {
+                // Already processed above, just skip the argument
+                i++; // Skip the next argument
             } else if ("--concordance-format".equals(args[i]) && i + 1 < args.length) {
                 String formatStr = args[i + 1].toLowerCase();
                 if ("md".equals(formatStr) || "markdown".equals(formatStr)) {
@@ -406,6 +611,8 @@ public class FtocUtility {
                     concordanceFormat = ConcordanceFormatter.Format.HTML;
                 } else if ("json".equals(formatStr)) {
                     concordanceFormat = ConcordanceFormatter.Format.JSON;
+                } else if ("junit".equals(formatStr) || "junit-xml".equals(formatStr) || "xml".equals(formatStr)) {
+                    concordanceFormat = ConcordanceFormatter.Format.JUNIT_XML;
                 } else {
                     concordanceFormat = ConcordanceFormatter.Format.PLAIN_TEXT;
                 }
@@ -422,6 +629,8 @@ public class FtocUtility {
                     tagQualityFormat = TagQualityFormatter.Format.HTML;
                 } else if ("json".equals(formatStr)) {
                     tagQualityFormat = TagQualityFormatter.Format.JSON;
+                } else if ("junit".equals(formatStr) || "junit-xml".equals(formatStr) || "xml".equals(formatStr)) {
+                    tagQualityFormat = TagQualityFormatter.Format.JUNIT_XML;
                 } else {
                     tagQualityFormat = TagQualityFormatter.Format.PLAIN_TEXT;
                 }
@@ -436,6 +645,8 @@ public class FtocUtility {
                     antiPatternFormat = AntiPatternFormatter.Format.HTML;
                 } else if ("json".equals(formatStr)) {
                     antiPatternFormat = AntiPatternFormatter.Format.JSON;
+                } else if ("junit".equals(formatStr) || "junit-xml".equals(formatStr) || "xml".equals(formatStr)) {
+                    antiPatternFormat = AntiPatternFormatter.Format.JUNIT_XML;
                 } else {
                     antiPatternFormat = AntiPatternFormatter.Format.PLAIN_TEXT;
                 }
@@ -452,6 +663,14 @@ public class FtocUtility {
                     ftoc.addExcludeTagFilter(tag.trim());
                 }
                 i++; // Skip the next argument
+            } else if ("--junit-report".equals(args[i])) {
+                // Set all formatters to JUnit XML format
+                tocFormat = TocFormatter.Format.JUNIT_XML;
+                concordanceFormat = ConcordanceFormatter.Format.JUNIT_XML;
+                tagQualityFormat = TagQualityFormatter.Format.JUNIT_XML;
+                antiPatternFormat = AntiPatternFormatter.Format.JUNIT_XML;
+            } else if ("--performance".equals(args[i])) {
+                enablePerformance = true;
             }
         }
         
@@ -461,6 +680,7 @@ public class FtocUtility {
         ftoc.setAntiPatternFormat(antiPatternFormat);
         ftoc.setAnalyzeTagQuality(analyzeTagQuality);
         ftoc.setDetectAntiPatterns(detectAntiPatterns);
+        ftoc.setPerformanceMonitoring(enablePerformance);
         
         // Process the directory and generate concordance data
         ftoc.processDirectory(directoryPath, generateConcordanceOnly);

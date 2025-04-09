@@ -108,6 +108,7 @@ Managing large suites of Cucumber tests presents challenges:
 - [Conventional Commits Guide](docs/developer/CONVENTIONAL_COMMITS.md)
 - [Release Process](docs/developer/RELEASE_PROCESS.md)
 - [Changelog Usage](docs/developer/CHANGELOG_USAGE.md)
+- [Performance Optimization](docs/developer/PERFORMANCE.md)
 
 For all documentation, see the [docs directory](docs/README.md).
 
