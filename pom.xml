@@ -88,6 +88,13 @@
       <version>1.4.0</version>
       <scope>test</scope>
     </dependency>
+    <!-- Mockito for mocking in unit tests -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>5.8.0</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <resources>
@@ -238,7 +245,6 @@
           <altDeploymentRepository>github::default::https://maven.pkg.github.com/heymumford/ftoc</altDeploymentRepository>
         </configuration>
       </plugin>
-      
       <!-- OWASP Dependency Check for security vulnerabilities -->
       <plugin>
         <groupId>org.owasp</groupId>
@@ -250,12 +256,12 @@
             <format>XML</format>
             <format>JSON</format>
           </formats>
-          <failBuildOnCVSS>9</failBuildOnCVSS> <!-- Only fail on critical vulnerabilities -->
+          <failBuildOnCVSS>9</failBuildOnCVSS>
+          <!-- Only fail on critical vulnerabilities -->
           <suppressionFile>${project.basedir}/config/dependency-check-suppressions.xml</suppressionFile>
           <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
         </configuration>
       </plugin>
-      
       <!-- JaCoCo plugin for code coverage -->
       <plugin>
         <groupId>org.jacoco</groupId>

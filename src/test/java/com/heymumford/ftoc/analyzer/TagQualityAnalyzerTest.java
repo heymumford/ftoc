@@ -133,6 +133,57 @@ public class TagQualityAnalyzerTest {
     }
     
     @Test
+    public void testWarningWithCustomSeverityAndAlternatives() {
+        // Create custom warning configuration with severity levels and standard alternatives
+        com.heymumford.ftoc.config.WarningConfiguration customConfig = new com.heymumford.ftoc.config.WarningConfiguration();
+        
+        // Add standard alternatives to low-value tag warning
+        com.heymumford.ftoc.config.WarningConfiguration.WarningConfig lowValueConfig = 
+                customConfig.getTagQualityWarnings().get(TagQualityAnalyzer.WarningType.LOW_VALUE_TAG.name());
+        lowValueConfig.setSeverity(com.heymumford.ftoc.config.WarningConfiguration.Severity.ERROR);
+        lowValueConfig.addStandardAlternative("@UI");
+        lowValueConfig.addStandardAlternative("@API");
+        lowValueConfig.addStandardAlternative("@P1");
+        
+        // Create analyzer with custom config
+        TagQualityAnalyzer customAnalyzer = new TagQualityAnalyzer(tagConcordance, features, customConfig);
+        List<TagQualityAnalyzer.Warning> warnings = customAnalyzer.analyzeTagQuality();
+        
+        // Find a low-value tag warning
+        boolean foundLowValueTagWarning = false;
+        for (TagQualityAnalyzer.Warning warning : warnings) {
+            if (warning.getType() == TagQualityAnalyzer.WarningType.LOW_VALUE_TAG) {
+                foundLowValueTagWarning = true;
+                
+                // Verify severity is set correctly
+                assertEquals(com.heymumford.ftoc.config.WarningConfiguration.Severity.ERROR, 
+                            warning.getSeverity(), 
+                            "Low-value tag warning should have ERROR severity");
+                
+                // Verify standard alternatives are included
+                assertTrue(warning.hasStandardAlternatives(), 
+                          "Warning should have standard alternatives");
+                
+                assertEquals(3, warning.getStandardAlternatives().size(), 
+                            "Should have 3 standard alternatives");
+                
+                assertTrue(warning.getStandardAlternatives().contains("@UI"), 
+                          "Should suggest @UI as an alternative");
+            }
+        }
+        
+        assertTrue(foundLowValueTagWarning, "Should find low-value tag warning");
+        
+        // Verify report content includes severity and alternatives
+        String report = customAnalyzer.generateWarningReport(warnings);
+        assertTrue(report.contains("ERROR LEVEL WARNINGS"), 
+                  "Report should include ERROR level section");
+        
+        assertTrue(report.contains("Suggested alternatives:"), 
+                  "Report should include alternative suggestions");
+    }
+    
+    @Test
     public void testWarningReportGeneration() {
         List<TagQualityAnalyzer.Warning> warnings = analyzer.analyzeTagQuality();
         String report = analyzer.generateWarningReport(warnings);

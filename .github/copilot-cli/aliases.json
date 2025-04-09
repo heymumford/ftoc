@@ -1,0 +1,12 @@
+{
+  "ftoc:analyze": "Run FTOC analysis on feature files in the specified directory",
+  "ftoc:report": "Generate a specific report type (concordance, tags, anti-patterns)",
+  "ftoc:build": "Build the FTOC project from source",
+  "ftoc:test": "Run tests for the FTOC project",
+  "ftoc:benchmark": "Run performance benchmarks",
+  "ftoc:version": "Display FTOC version information",
+  "ftoc:setup": "Set up FTOC environment and dependencies",
+  "ftoc:help": "Show help for FTOC commands and options",
+  "ftoc:generate": "Generate sample feature file with best practices",
+  "ftoc:validate": "Validate feature files against best practices"
+}

@@ -68,10 +68,35 @@ java -jar target/ftoc-0.5.1-jar-with-dependencies.jar --version
 
 ## Programmatic Usage
 
+### Legacy API
+
 ```java
 import com.heymumford.ftoc.FtocUtility;
 
 FtocUtility ftoc = new FtocUtility();
+ftoc.initialize();
+ftoc.processDirectory("/path/to/feature/files");
+```
+
+### New Architecture (Recommended)
+
+```java
+import com.heymumford.ftoc.FtocUtilityRefactored;
+import com.heymumford.ftoc.core.impl.DefaultFeatureRepository;
+import com.heymumford.ftoc.core.impl.DefaultFeatureProcessor;
+import com.heymumford.ftoc.core.impl.DefaultReporter;
+
+// Using default implementation
+FtocUtilityRefactored ftoc = new FtocUtilityRefactored();
+ftoc.initialize();
+ftoc.processDirectory("/path/to/feature/files");
+
+// Or with custom components
+FeatureRepository repository = new DefaultFeatureRepository();
+FeatureProcessor processor = new DefaultFeatureProcessor(repository);
+Reporter reporter = new DefaultReporter();
+
+FtocUtilityRefactored ftoc = new FtocUtilityRefactored(repository, processor, reporter);
 ftoc.initialize();
 ftoc.processDirectory("/path/to/feature/files");
 ```
@@ -101,6 +126,7 @@ Managing large suites of Cucumber tests presents challenges:
 
 ### Developer Documentation
 
+- [Architecture Documentation](docs/developer/ARCHITECTURE.md)
 - [Architecture Decision Records (ADRs)](docs/adr/README.md)
 - [C4 Architecture Diagrams](docs/c4/README.md)
 - [Project Kanban Board](docs/developer/KANBAN.md)

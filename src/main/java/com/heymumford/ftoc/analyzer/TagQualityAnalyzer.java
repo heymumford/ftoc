@@ -78,12 +78,24 @@ public class TagQualityAnalyzer {
         private final String message;
         private final String location;
         private final List<String> remediation;
+        private final com.heymumford.ftoc.config.WarningConfiguration.Severity severity;
+        private final List<String> standardAlternatives;
         
         public Warning(WarningType type, String message, String location, List<String> remediation) {
+            this(type, message, location, remediation, com.heymumford.ftoc.config.WarningConfiguration.Severity.WARNING, null);
+        }
+        
+        public Warning(WarningType type, String message, String location, List<String> remediation, 
+                      com.heymumford.ftoc.config.WarningConfiguration.Severity severity,
+                      List<String> standardAlternatives) {
             this.type = type;
             this.message = message;
             this.location = location;
             this.remediation = remediation;
+            this.severity = severity;
+            this.standardAlternatives = standardAlternatives != null ? 
+                                        new ArrayList<>(standardAlternatives) : 
+                                        Collections.emptyList();
         }
         
         public WarningType getType() {
@@ -102,10 +114,27 @@ public class TagQualityAnalyzer {
             return remediation;
         }
         
+        public com.heymumford.ftoc.config.WarningConfiguration.Severity getSeverity() {
+            return severity;
+        }
+        
+        public String getSeverityDisplayName() {
+            return severity.getDisplayName();
+        }
+        
+        public List<String> getStandardAlternatives() {
+            return standardAlternatives;
+        }
+        
+        public boolean hasStandardAlternatives() {
+            return standardAlternatives != null && !standardAlternatives.isEmpty();
+        }
+        
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append(type.getDescription()).append(": ").append(message);
+            sb.append(severity.getDisplayName()).append(": ")
+              .append(type.getDescription()).append(": ").append(message);
             if (location != null && !location.isEmpty()) {
                 sb.append(" (in ").append(location).append(")");
             }
@@ -216,6 +245,14 @@ public class TagQualityAnalyzer {
     private List<Warning> detectMissingPriorityTags() {
         List<Warning> warnings = new ArrayList<>();
         
+        // Get configuration for warning type
+        com.heymumford.ftoc.config.WarningConfiguration.WarningConfig warningConfig = 
+                config.getTagQualityWarnings().get(WarningType.MISSING_PRIORITY_TAG.name());
+        
+        if (!warningConfig.isEnabled()) {
+            return warnings;
+        }
+        
         for (Feature feature : features) {
             for (Scenario scenario : feature.getScenarios()) {
                 // Skip backgrounds
@@ -233,17 +270,24 @@ public class TagQualityAnalyzer {
                 
                 if (!hasPriorityTag && !featureHasPriorityTag) {
                     String location = feature.getFilename() + " - " + scenario.getName();
-                    List<String> remediation = Arrays.asList(
-                            "Add a priority tag like @P0 (highest), @P1, @P2, or @P3 (lowest)",
-                            "Alternatively, add a semantic priority tag like @Critical, @High, @Medium, or @Low",
-                            "Apply priority tags consistently across all scenarios"
-                    );
+                    List<String> remediation = new ArrayList<>();
+                    remediation.add("Add a priority tag like @P0 (highest), @P1, @P2, or @P3 (lowest)");
+                    remediation.add("Alternatively, add a semantic priority tag like @Critical, @High, @Medium, or @Low");
+                    remediation.add("Apply priority tags consistently across all scenarios");
+                    
+                    // Add standard alternatives if they exist
+                    if (!warningConfig.getStandardAlternatives().isEmpty()) {
+                        remediation.add("Use one of the standard priority tags: " + 
+                                        String.join(", ", warningConfig.getStandardAlternatives()));
+                    }
                     
                     warnings.add(new Warning(
                             WarningType.MISSING_PRIORITY_TAG,
                             "Scenario is missing a priority tag",
                             location,
-                            remediation
+                            remediation,
+                            warningConfig.getSeverity(),
+                            warningConfig.getStandardAlternatives()
                     ));
                 }
             }
@@ -301,6 +345,14 @@ public class TagQualityAnalyzer {
         List<Warning> warnings = new ArrayList<>();
         int totalFeatures = features.size();
         
+        // Get configuration for relevant warning types
+        com.heymumford.ftoc.config.WarningConfiguration.WarningConfig lowValueConfig = 
+                config.getTagQualityWarnings().get(WarningType.LOW_VALUE_TAG.name());
+        com.heymumford.ftoc.config.WarningConfiguration.WarningConfig tooGenericConfig = 
+                config.getTagQualityWarnings().get(WarningType.TOO_GENERIC_TAG.name());
+        com.heymumford.ftoc.config.WarningConfiguration.WarningConfig ambiguousConfig = 
+                config.getTagQualityWarnings().get(WarningType.AMBIGUOUS_TAG.name());
+        
         // Check for known low-value tags
         for (Map.Entry<String, Integer> entry : tagConcordance.entrySet()) {
             String tag = entry.getKey();
@@ -308,26 +360,33 @@ public class TagQualityAnalyzer {
             String lowerTag = tag.toLowerCase();
             
             // Check against known low-value tag patterns
-            if (KNOWN_LOW_VALUE_TAGS.contains(lowerTag)) {
+            if (KNOWN_LOW_VALUE_TAGS.contains(lowerTag) && lowValueConfig.isEnabled()) {
                 List<String> locations = findTagLocations(tag);
                 String locationStr = String.join(", ", locations);
                 
-                List<String> remediation = Arrays.asList(
-                        "Replace with more specific, meaningful tags",
-                        "Consider what information the tag should convey",
-                        "Tags should help with test selection and documentation"
-                );
+                List<String> remediation = new ArrayList<>();
+                remediation.add("Replace with more specific, meaningful tags");
+                remediation.add("Consider what information the tag should convey");
+                remediation.add("Tags should help with test selection and documentation");
+                
+                // Add standard alternatives if they exist
+                if (!lowValueConfig.getStandardAlternatives().isEmpty()) {
+                    remediation.add("Consider using standard alternatives: " + 
+                                    String.join(", ", lowValueConfig.getStandardAlternatives()));
+                }
                 
                 warnings.add(new Warning(
                         WarningType.LOW_VALUE_TAG,
                         "'" + tag + "' is a known low-value tag that doesn't provide useful context",
                         locationStr,
-                        remediation
+                        remediation,
+                        lowValueConfig.getSeverity(),
+                        lowValueConfig.getStandardAlternatives()
                 ));
             }
             
             // Check for tags used on nearly all features (>90%)
-            if (totalFeatures > 5 && count >= totalFeatures * 0.9) {
+            if (totalFeatures > 5 && count >= totalFeatures * 0.9 && tooGenericConfig.isEnabled()) {
                 List<String> remediation = Arrays.asList(
                         "Overly common tags don't help discriminate between tests",
                         "Consider if this tag is providing useful information",
@@ -338,12 +397,14 @@ public class TagQualityAnalyzer {
                         WarningType.TOO_GENERIC_TAG,
                         "'" + tag + "' is used on nearly all features, making it too generic to be useful",
                         "Used in " + count + " out of " + totalFeatures + " features",
-                        remediation
+                        remediation,
+                        tooGenericConfig.getSeverity(),
+                        null
                 ));
             }
             
             // Check for ambiguous short tags (1-2 characters)
-            if (tag.length() <= 3 && !PRIORITY_TAGS.contains(lowerTag)) {
+            if (tag.length() <= 3 && !PRIORITY_TAGS.contains(lowerTag) && ambiguousConfig.isEnabled()) {
                 List<String> locations = findTagLocations(tag);
                 String locationStr = String.join(", ", locations);
                 
@@ -357,7 +418,9 @@ public class TagQualityAnalyzer {
                         WarningType.AMBIGUOUS_TAG,
                         "'" + tag + "' is too short and ambiguous",
                         locationStr,
-                        remediation
+                        remediation,
+                        ambiguousConfig.getSeverity(),
+                        null
                 ));
             }
         }
@@ -789,9 +852,18 @@ public class TagQualityAnalyzer {
             return "No tag quality issues detected.";
         }
         
-        // Group warnings by type
-        Map<WarningType, List<Warning>> warningsByType = new HashMap<>();
+        // Group warnings by severity first, then by type
+        Map<com.heymumford.ftoc.config.WarningConfiguration.Severity, Map<WarningType, List<Warning>>> warningsBySeverityAndType = new HashMap<>();
+        
+        // Initialize severity groups
+        for (com.heymumford.ftoc.config.WarningConfiguration.Severity severity : 
+                com.heymumford.ftoc.config.WarningConfiguration.Severity.values()) {
+            warningsBySeverityAndType.put(severity, new HashMap<>());
+        }
+        
+        // Sort warnings by severity and type
         for (Warning warning : warnings) {
+            Map<WarningType, List<Warning>> warningsByType = warningsBySeverityAndType.get(warning.getSeverity());
             warningsByType.computeIfAbsent(warning.getType(), k -> new ArrayList<>()).add(warning);
         }
         
@@ -800,46 +872,94 @@ public class TagQualityAnalyzer {
         report.append("===================\n\n");
         report.append("Found ").append(warnings.size()).append(" potential tag quality issues.\n\n");
         
-        // Generate summary section
-        report.append("SUMMARY\n");
-        report.append("-------\n");
+        // Generate summary section by severity
+        report.append("SUMMARY BY SEVERITY\n");
+        report.append("-----------------\n");
         
-        for (WarningType type : WarningType.values()) {
-            List<Warning> typeWarnings = warningsByType.getOrDefault(type, Collections.emptyList());
-            if (!typeWarnings.isEmpty()) {
-                report.append(String.format("%-25s: %d\n", type.getDescription(), typeWarnings.size()));
+        for (com.heymumford.ftoc.config.WarningConfiguration.Severity severity : 
+                com.heymumford.ftoc.config.WarningConfiguration.Severity.values()) {
+            
+            Map<WarningType, List<Warning>> warningsByType = warningsBySeverityAndType.get(severity);
+            int totalForSeverity = warningsByType.values().stream()
+                    .mapToInt(List::size)
+                    .sum();
+            
+            if (totalForSeverity > 0) {
+                report.append(String.format("%-10s: %d\n", severity.getDisplayName(), totalForSeverity));
             }
         }
         
         report.append("\n");
         
-        // Generate detailed section for each warning type
-        for (Map.Entry<WarningType, List<Warning>> entry : warningsByType.entrySet()) {
-            WarningType type = entry.getKey();
-            List<Warning> typeWarnings = entry.getValue();
-            
-            report.append(type.getDescription().toUpperCase()).append("\n");
-            report.append(String.join("", Collections.nCopies(type.getDescription().length(), "-"))).append("\n");
-            
-            // Include a general remediation suggestion for this warning type
-            if (!typeWarnings.isEmpty()) {
-                report.append("Remediation:\n");
-                for (String remedy : typeWarnings.get(0).getRemediation()) {
-                    report.append("- ").append(remedy).append("\n");
-                }
-                report.append("\n");
+        // Generate summary section by type
+        report.append("SUMMARY BY TYPE\n");
+        report.append("-------------\n");
+        
+        for (WarningType type : WarningType.values()) {
+            int count = 0;
+            for (Map<WarningType, List<Warning>> warningsByType : warningsBySeverityAndType.values()) {
+                List<Warning> typeWarnings = warningsByType.getOrDefault(type, Collections.emptyList());
+                count += typeWarnings.size();
             }
             
-            // List all instances of this warning type
-            for (Warning warning : typeWarnings) {
-                report.append("- ").append(warning.getMessage());
-                if (warning.getLocation() != null && !warning.getLocation().isEmpty()) {
-                    report.append(" (in ").append(warning.getLocation()).append(")");
-                }
-                report.append("\n");
+            if (count > 0) {
+                report.append(String.format("%-25s: %d\n", type.getDescription(), count));
             }
+        }
+        
+        report.append("\n");
+        
+        // Generate detailed section for each severity level
+        for (com.heymumford.ftoc.config.WarningConfiguration.Severity severity : 
+                com.heymumford.ftoc.config.WarningConfiguration.Severity.values()) {
             
-            report.append("\n");
+            Map<WarningType, List<Warning>> warningsByType = warningsBySeverityAndType.get(severity);
+            int totalForSeverity = warningsByType.values().stream()
+                    .mapToInt(List::size)
+                    .sum();
+            
+            if (totalForSeverity > 0) {
+                report.append(severity.getDisplayName().toUpperCase()).append(" LEVEL WARNINGS\n");
+                report.append(String.join("", Collections.nCopies(severity.getDisplayName().length() + 14, "="))).append("\n\n");
+                
+                // Generate detailed section for each warning type within this severity
+                for (Map.Entry<WarningType, List<Warning>> entry : warningsByType.entrySet()) {
+                    WarningType type = entry.getKey();
+                    List<Warning> typeWarnings = entry.getValue();
+                    
+                    if (typeWarnings.isEmpty()) {
+                        continue;
+                    }
+                    
+                    report.append(type.getDescription().toUpperCase()).append("\n");
+                    report.append(String.join("", Collections.nCopies(type.getDescription().length(), "-"))).append("\n");
+                    
+                    // Include a general remediation suggestion for this warning type
+                    report.append("Remediation:\n");
+                    for (String remedy : typeWarnings.get(0).getRemediation()) {
+                        report.append("- ").append(remedy).append("\n");
+                    }
+                    report.append("\n");
+                    
+                    // List all instances of this warning type
+                    for (Warning warning : typeWarnings) {
+                        report.append("- ").append(warning.getMessage());
+                        if (warning.getLocation() != null && !warning.getLocation().isEmpty()) {
+                            report.append(" (in ").append(warning.getLocation()).append(")");
+                        }
+                        
+                        // Add standard alternatives if available
+                        if (warning.hasStandardAlternatives()) {
+                            report.append("\n  Suggested alternatives: ")
+                                  .append(String.join(", ", warning.getStandardAlternatives()));
+                        }
+                        
+                        report.append("\n");
+                    }
+                    
+                    report.append("\n");
+                }
+            }
         }
         
         return report.toString();

@@ -11,13 +11,37 @@ This directory contains resources and configurations to enhance the FTOC project
 
 ## Using Copilot with FTOC
 
-### VS Code Integration
+### IDE Integration
+
+#### VS Code Integration
 
 The project includes custom VS Code Copilot Chat commands and personalization:
 
 - Located in `.vscode/copilot-chat/`
 - Custom commands: `@explain-ftoc`, `@analyze-gherkin`, `@suggest-test`, `@optimize-code`
 - Personalization: `@ftoc-expert`, `@bdd-advisor`, `@java-expert`
+
+#### JetBrains IDEs Integration
+
+For IntelliJ IDEA and other JetBrains IDEs, custom Copilot configurations are available:
+
+- Located in `.idea/copilot/`
+- Custom prompts in `prompts.json`
+- Personalities in `personalities.json`
+- Live templates in `live-templates.xml`
+- Sample run configurations
+- Detailed setup instructions in `.idea/copilot/README.md`
+
+### Command Line Integration
+
+GitHub Copilot CLI integration provides AI-assisted command-line experience:
+
+- Located in `.github/copilot-cli/`
+- Custom project aliases for common FTOC tasks
+- Specialized scripts for feature file generation and validation
+- Integration with GitHub Copilot CLI commands
+- Setup script to configure your environment
+- Detailed documentation in `.github/copilot-cli/README.md`
 
 ### Prompt Templates
 

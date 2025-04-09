@@ -501,7 +501,7 @@ public class FtocUtility {
     
     private static void printHelp() {
         System.out.println("FTOC Utility version " + VERSION);
-        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--concordance-format <format>] [--analyze-tags] [--tag-quality-format <format>] [--detect-anti-patterns] [--anti-pattern-format <format>] [--format <format>] [--config-file <file>] [--show-config] [--junit-report] [--performance] [--version | -v] [--help]");
+        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--concordance-format <format>] [--analyze-tags] [--tag-quality-format <format>] [--detect-anti-patterns] [--anti-pattern-format <format>] [--format <format>] [--config-file <file>] [--show-config] [--junit-report] [--performance] [--benchmark] [--version | -v] [--help]");
         System.out.println("Options:");
         System.out.println("  -d <directory>      Specify the directory to analyze (default: current directory)");
         System.out.println("  -f <format>         Specify TOC output format (text, md, html, json, junit) (default: text)");
@@ -530,8 +530,17 @@ public class FtocUtility {
         System.out.println("  --show-config       Display the current warning configuration and exit");
         System.out.println("  --performance       Enable performance monitoring and optimizations");
         System.out.println("                      Will use parallel processing for large repositories");
+        System.out.println("  --benchmark         Run performance benchmarks (see benchmark options below)");
         System.out.println("  --version, -v       Display version information");
         System.out.println("  --help              Display this help message");
+        System.out.println("\nBenchmark Options (used with --benchmark):");
+        System.out.println("  --small             Run benchmarks on small repositories (10 files)");
+        System.out.println("  --medium            Run benchmarks on medium repositories (50 files)");
+        System.out.println("  --large             Run benchmarks on large repositories (200 files)");
+        System.out.println("  --very-large        Run benchmarks on very large repositories (500 files)");
+        System.out.println("  --all               Run benchmarks on all repository sizes");
+        System.out.println("  --report <file>     Specify report output file (default: benchmark-report.txt)");
+        System.out.println("  --no-cleanup        Do not delete temporary files after benchmark");
     }
 
     public static void main(String[] args) {
@@ -542,6 +551,12 @@ public class FtocUtility {
 
         if (Arrays.asList(args).contains("--version") || Arrays.asList(args).contains("-v")) {
             System.out.println("FTOC Utility version " + VERSION);
+            return;
+        }
+        
+        // Check for benchmark command
+        if (Arrays.asList(args).contains("--benchmark")) {
+            runBenchmark(args);
             return;
         }
         
@@ -684,5 +699,37 @@ public class FtocUtility {
         
         // Process the directory and generate concordance data
         ftoc.processDirectory(directoryPath, generateConcordanceOnly);
+    }
+    
+    /**
+     * Run benchmark tests.
+     * 
+     * @param args Command line arguments for benchmarking
+     */
+    private static void runBenchmark(String[] args) {
+        System.out.println("Running FTOC performance benchmarks...");
+        
+        // Delegate to the BenchmarkRunner main method
+        try {
+            Class<?> benchmarkClass = Class.forName("com.heymumford.ftoc.benchmark.BenchmarkRunner");
+            java.lang.reflect.Method mainMethod = benchmarkClass.getMethod("main", String[].class);
+            
+            // Filter out the --benchmark arg
+            String[] benchmarkArgs = Arrays.stream(args)
+                .filter(arg -> !"--benchmark".equals(arg))
+                .toArray(String[]::new);
+            
+            // Invoke the benchmark runner
+            mainMethod.invoke(null, (Object) benchmarkArgs);
+            
+        } catch (ClassNotFoundException e) {
+            System.err.println("Error: Benchmark classes not available in this build.");
+            System.err.println("This feature may only be available in development builds.");
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            System.err.println("Error accessing benchmark functionality: " + e.getMessage());
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            System.err.println("Error during benchmark execution: " + e.getCause().getMessage());
+            e.getCause().printStackTrace();
+        }
     }
 }

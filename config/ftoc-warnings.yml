@@ -15,12 +15,35 @@ warnings:
     MISSING_PRIORITY_TAG:
       enabled: true
       severity: error
+      standardAlternatives:
+        - "@P0"
+        - "@P1"
+        - "@P2"
+        - "@P3"
+        - "@Critical"
+        - "@High"
+        - "@Medium"
+        - "@Low"
     MISSING_TYPE_TAG:
       enabled: true
       severity: warning
+      standardAlternatives:
+        - "@UI"
+        - "@API"
+        - "@Backend"
+        - "@Frontend"
+        - "@Integration"
+        - "@Unit"
+        - "@Performance"
+        - "@Security"
     LOW_VALUE_TAG:
       enabled: true
       severity: info
+      standardAlternatives:
+        - "@Feature"
+        - "@Scenario"
+        - "@Test"
+        - "@Temp"
     INCONSISTENT_TAGGING:
       enabled: true
       severity: warning
@@ -36,6 +59,11 @@ warnings:
     AMBIGUOUS_TAG:
       enabled: true
       severity: warning
+      standardAlternatives:
+        - "@UI" 
+        - "@API"
+        - "@P0"
+        - "@P1"
     TOO_GENERIC_TAG:
       enabled: true
       severity: info

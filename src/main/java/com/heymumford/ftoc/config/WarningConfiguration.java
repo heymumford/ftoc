@@ -22,6 +22,44 @@ import java.util.*;
 public class WarningConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(WarningConfiguration.class);
     
+    /**
+     * Enumeration of warning severity levels.
+     */
+    public enum Severity {
+        ERROR("ERROR"),
+        WARNING("WARNING"),
+        INFO("INFO"),
+        HINT("HINT");
+        
+        private final String displayName;
+        
+        Severity(String displayName) {
+            this.displayName = displayName;
+        }
+        
+        public String getDisplayName() {
+            return displayName;
+        }
+        
+        /**
+         * Convert a string to a Severity enum value.
+         * 
+         * @param str The string representation
+         * @return The corresponding Severity, or WARNING if not recognized
+         */
+        public static Severity fromString(String str) {
+            if (str == null) {
+                return WARNING;
+            }
+            
+            try {
+                return valueOf(str.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return WARNING;
+            }
+        }
+    }
+    
     // Default configuration file paths to check (in order)
     private static final String[] DEFAULT_CONFIG_PATHS = {
         ".ftoc/config.yml",
@@ -212,6 +250,13 @@ public class WarningConfiguration {
                         
                         if (warningConfig.containsKey("severity")) {
                             tagQualityWarnings.get(warningName).setSeverity((String) warningConfig.get("severity"));
+                        }
+                        
+                        if (warningConfig.containsKey("standardAlternatives")) {
+                            List<String> alternatives = (List<String>) warningConfig.get("standardAlternatives");
+                            if (alternatives != null) {
+                                tagQualityWarnings.get(warningName).setStandardAlternatives(alternatives);
+                            }
                         }
                     }
                 }
@@ -407,13 +452,15 @@ public class WarningConfiguration {
         private final String name;
         private boolean enabled;
         private final String description;
-        private String severity;
+        private Severity severity;
+        private List<String> standardAlternatives;
         
         public WarningConfig(String name, boolean enabled, String description) {
             this.name = name;
             this.enabled = enabled;
             this.description = description;
-            this.severity = "warning"; // Default severity
+            this.severity = Severity.WARNING; // Default severity
+            this.standardAlternatives = new ArrayList<>();
         }
         
         public String getName() {
@@ -432,12 +479,32 @@ public class WarningConfiguration {
             return description;
         }
         
-        public String getSeverity() {
+        public Severity getSeverity() {
             return severity;
         }
         
-        public void setSeverity(String severity) {
+        public String getSeverityDisplayName() {
+            return severity.getDisplayName();
+        }
+        
+        public void setSeverity(Severity severity) {
             this.severity = severity;
+        }
+        
+        public void setSeverity(String severityStr) {
+            this.severity = Severity.fromString(severityStr);
+        }
+        
+        public List<String> getStandardAlternatives() {
+            return standardAlternatives;
+        }
+        
+        public void setStandardAlternatives(List<String> standardAlternatives) {
+            this.standardAlternatives = standardAlternatives;
+        }
+        
+        public void addStandardAlternative(String alternative) {
+            this.standardAlternatives.add(alternative);
         }
     }
 }
