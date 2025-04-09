@@ -24,11 +24,11 @@
   - [ ] Create benchmark test suite
 
 ## P2 (Medium Priority)
-- [ ] Complete TOC generation with proper formatting
-  - [ ] Fix indentation in nested structures
-  - [ ] Add collapsible sections for HTML output
-  - [ ] Improve heading structure in Markdown output
-  - [ ] Add pagination for large TOCs
+- [x] Complete TOC generation with proper formatting
+  - [x] Fix indentation in nested structures
+  - [x] Add collapsible sections for HTML output
+  - [x] Improve heading structure in Markdown output
+  - [x] Add pagination for large TOCs
 
 - [ ] Improve tag concordance report
   - [ ] Add tag co-occurrence metrics

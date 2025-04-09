@@ -109,6 +109,7 @@ Managing large suites of Cucumber tests presents challenges:
 - [Release Process](docs/developer/RELEASE_PROCESS.md)
 - [Changelog Usage](docs/developer/CHANGELOG_USAGE.md)
 - [Performance Optimization](docs/developer/PERFORMANCE.md)
+- [TOC Formatting Guide](docs/developer/TOC_FORMATTING.md)
 
 For all documentation, see the [docs directory](docs/README.md).
 
