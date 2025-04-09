@@ -1,6 +1,8 @@
 package com.heymumford.ftoc.formatter;
 
 import com.heymumford.ftoc.model.Feature;
+import com.heymumford.ftoc.formatter.ConcordanceAnalyzer.CoOccurrence;
+import com.heymumford.ftoc.formatter.ConcordanceAnalyzer.TagTrend;
 
 import java.text.DecimalFormat;
 import java.util.*;
@@ -31,26 +33,34 @@ public class ConcordanceFormatter {
     public String generateConcordanceReport(Map<String, Integer> tagConcordance, 
                                           List<Feature> features,
                                           Format format) {
+        // Perform advanced tag analysis
+        List<CoOccurrence> coOccurrences = ConcordanceAnalyzer.calculateCoOccurrences(features);
+        Map<String, TagTrend> tagTrends = ConcordanceAnalyzer.calculateTagTrends(features, tagConcordance);
+        Map<String, Double> tagSignificance = ConcordanceAnalyzer.calculateTagSignificance(features, tagConcordance);
+        String visualizationJson = ConcordanceAnalyzer.generateVisualizationJson(coOccurrences, tagConcordance);
+        
         switch (format) {
             case PLAIN_TEXT:
-                return generatePlainTextReport(tagConcordance, features);
+                return generatePlainTextReport(tagConcordance, features, coOccurrences, tagTrends, tagSignificance);
             case MARKDOWN:
-                return generateMarkdownReport(tagConcordance, features);
+                return generateMarkdownReport(tagConcordance, features, coOccurrences, tagTrends, tagSignificance);
             case HTML:
-                return generateHtmlReport(tagConcordance, features);
+                return generateHtmlReport(tagConcordance, features, coOccurrences, tagTrends, tagSignificance, visualizationJson);
             case JSON:
-                return generateJsonReport(tagConcordance, features);
+                return generateJsonReport(tagConcordance, features, coOccurrences, tagTrends, tagSignificance, visualizationJson);
             case JUNIT_XML:
                 return generateJUnitXmlReport(tagConcordance, features);
             default:
-                return generatePlainTextReport(tagConcordance, features);
+                return generatePlainTextReport(tagConcordance, features, coOccurrences, tagTrends, tagSignificance);
         }
     }
     
     /**
      * Generate a tag concordance report in plain text format.
      */
-    private String generatePlainTextReport(Map<String, Integer> tagConcordance, List<Feature> features) {
+    private String generatePlainTextReport(Map<String, Integer> tagConcordance, List<Feature> features,
+                                          List<CoOccurrence> coOccurrences, Map<String, TagTrend> tagTrends,
+                                          Map<String, Double> tagSignificance) {
         StringBuilder report = new StringBuilder();
         int totalTags = tagConcordance.values().stream().mapToInt(Integer::intValue).sum();
         int uniqueTags = tagConcordance.size();
@@ -70,11 +80,13 @@ public class ConcordanceFormatter {
         // Tag frequency table
         report.append("TAG FREQUENCY\n");
         report.append("-------------\n");
-        report.append(String.format("%-30s %-10s %-10s\n", "Tag", "Count", "Percent"));
-        report.append(String.format("%-30s %-10s %-10s\n", 
-                "------------------------------", "----------", "----------"));
+        report.append(String.format("%-30s %-10s %-10s %-12s %-12s\n", 
+                "Tag", "Count", "Percent", "Trend", "Significance"));
+        report.append(String.format("%-30s %-10s %-10s %-12s %-12s\n", 
+                "------------------------------", "----------", "----------", "------------", "------------"));
         
         DecimalFormat df = new DecimalFormat("0.0%");
+        DecimalFormat sigFormat = new DecimalFormat("0.000");
         
         // Sort tags by count (descending)
         List<Map.Entry<String, Integer>> sortedTags = tagConcordance.entrySet().stream()
@@ -86,8 +98,12 @@ public class ConcordanceFormatter {
             int count = entry.getValue();
             double percentage = (double) count / totalTags;
             
-            report.append(String.format("%-30s %-10d %-10s\n", 
-                    tag, count, df.format(percentage)));
+            // Get trend and significance for this tag
+            String trend = tagTrends.containsKey(tag) ? tagTrends.get(tag).getTrend() : "Unknown";
+            double significance = tagSignificance.getOrDefault(tag, 0.0);
+            
+            report.append(String.format("%-30s %-10d %-10s %-12s %-12s\n", 
+                    tag, count, df.format(percentage), trend, sigFormat.format(significance)));
         }
         
         // Tag categories analysis
@@ -106,6 +122,52 @@ public class ConcordanceFormatter {
             report.append("\n");
         }
         
+        // Tag co-occurrence metrics
+        report.append("TAG CO-OCCURRENCE METRICS\n");
+        report.append("------------------------\n");
+        
+        if (coOccurrences.isEmpty()) {
+            report.append("No tag co-occurrences found.\n\n");
+        } else {
+            report.append(String.format("%-20s %-20s %-10s %-15s\n", 
+                    "Tag 1", "Tag 2", "Count", "Coefficient"));
+            report.append(String.format("%-20s %-20s %-10s %-15s\n", 
+                    "--------------------", "--------------------", "----------", "---------------"));
+            
+            // Display top 15 co-occurrences by coefficient
+            coOccurrences.stream()
+                    .limit(15)
+                    .forEach(co -> {
+                        report.append(String.format("%-20s %-20s %-10d %-15.3f\n", 
+                                co.getTag1(), co.getTag2(), co.getCount(), co.getCoefficient()));
+                    });
+            report.append("\n");
+        }
+        
+        // Tag trend analysis
+        report.append("TAG TREND ANALYSIS\n");
+        report.append("------------------\n");
+        
+        if (tagTrends.isEmpty()) {
+            report.append("No trend data available.\n\n");
+        } else {
+            report.append(String.format("%-30s %-10s %-12s %-15s\n", 
+                    "Tag", "Count", "Trend", "Growth Rate"));
+            report.append(String.format("%-30s %-10s %-12s %-15s\n", 
+                    "------------------------------", "----------", "------------", "---------------"));
+            
+            // Sort trends by growth rate (descending)
+            List<TagTrend> sortedTrends = tagTrends.values().stream()
+                    .sorted(Comparator.comparing(TagTrend::getGrowthRate).reversed())
+                    .collect(Collectors.toList());
+            
+            for (TagTrend trend : sortedTrends) {
+                report.append(String.format("%-30s %-10d %-12s %-15.3f\n", 
+                        trend.getTag(), trend.getTotalCount(), trend.getTrend(), trend.getGrowthRate()));
+            }
+            report.append("\n");
+        }
+        
         // Low-value tag detection
         report.append("POTENTIALLY LOW-VALUE TAGS\n");
         report.append("-------------------------\n");
@@ -120,22 +182,24 @@ public class ConcordanceFormatter {
             report.append("\n");
         }
         
-        // Tag co-occurrence information (simplified version)
-        report.append("COMMON TAG COMBINATIONS\n");
-        report.append("----------------------\n");
-        Map<Set<String>, Integer> tagCombinations = findTagCombinations(features);
+        // Statistically significant tags
+        report.append("STATISTICALLY SIGNIFICANT TAGS\n");
+        report.append("-----------------------------\n");
         
-        if (tagCombinations.isEmpty()) {
-            report.append("No common tag combinations found.\n");
+        // Sort tags by significance (descending)
+        List<Map.Entry<String, Double>> significantTags = tagSignificance.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(10)
+                .collect(Collectors.toList());
+        
+        if (significantTags.isEmpty()) {
+            report.append("No significant tags detected.\n\n");
         } else {
-            // Display top 10 tag combinations
-            tagCombinations.entrySet().stream()
-                    .sorted(Map.Entry.<Set<String>, Integer>comparingByValue().reversed())
-                    .limit(10)
-                    .forEach(entry -> {
-                        report.append(String.format("%s (%d occurrences)\n", 
-                                entry.getKey(), entry.getValue()));
-                    });
+            for (Map.Entry<String, Double> entry : significantTags) {
+                report.append(String.format("%s (Score: %.3f)\n", 
+                        entry.getKey(), entry.getValue()));
+            }
+            report.append("\n");
         }
         
         return report.toString();
@@ -144,7 +208,9 @@ public class ConcordanceFormatter {
     /**
      * Generate a tag concordance report in markdown format.
      */
-    private String generateMarkdownReport(Map<String, Integer> tagConcordance, List<Feature> features) {
+    private String generateMarkdownReport(Map<String, Integer> tagConcordance, List<Feature> features,
+                                        List<CoOccurrence> coOccurrences, Map<String, TagTrend> tagTrends,
+                                        Map<String, Double> tagSignificance) {
         StringBuilder report = new StringBuilder();
         int totalTags = tagConcordance.values().stream().mapToInt(Integer::intValue).sum();
         int uniqueTags = tagConcordance.size();
@@ -161,10 +227,11 @@ public class ConcordanceFormatter {
         
         // Tag frequency table
         report.append("## Tag Frequency\n\n");
-        report.append("| Tag | Count | Percent |\n");
-        report.append("|-----|-------|--------|\n");
+        report.append("| Tag | Count | Percent | Trend | Significance |\n");
+        report.append("|-----|-------|--------|-------|-------------|\n");
         
         DecimalFormat df = new DecimalFormat("0.0%");
+        DecimalFormat sigFormat = new DecimalFormat("0.000");
         
         // Sort tags by count (descending)
         List<Map.Entry<String, Integer>> sortedTags = tagConcordance.entrySet().stream()
@@ -176,8 +243,12 @@ public class ConcordanceFormatter {
             int count = entry.getValue();
             double percentage = (double) count / totalTags;
             
-            report.append(String.format("| `%s` | %d | %s |\n", 
-                    tag, count, df.format(percentage)));
+            // Get trend and significance for this tag
+            String trend = tagTrends.containsKey(tag) ? tagTrends.get(tag).getTrend() : "Unknown";
+            double significance = tagSignificance.getOrDefault(tag, 0.0);
+            
+            report.append(String.format("| `%s` | %d | %s | %s | %s |\n", 
+                    tag, count, df.format(percentage), trend, sigFormat.format(significance)));
         }
         
         // Tag categories analysis
@@ -195,6 +266,73 @@ public class ConcordanceFormatter {
             report.append("\n");
         }
         
+        // Tag co-occurrence metrics
+        report.append("## Tag Co-occurrence Metrics\n\n");
+        
+        if (coOccurrences.isEmpty()) {
+            report.append("No tag co-occurrences found.\n\n");
+        } else {
+            report.append("### Strongest Tag Relationships\n\n");
+            report.append("| Tag 1 | Tag 2 | Count | Coefficient |\n");
+            report.append("|-------|-------|-------|-------------|\n");
+            
+            // Display top 15 co-occurrences by coefficient
+            coOccurrences.stream()
+                    .limit(15)
+                    .forEach(co -> {
+                        report.append(String.format("| `%s` | `%s` | %d | %.3f |\n", 
+                                co.getTag1(), co.getTag2(), co.getCount(), co.getCoefficient()));
+                    });
+            report.append("\n");
+        }
+        
+        // Tag trend analysis
+        report.append("## Tag Trend Analysis\n\n");
+        
+        if (tagTrends.isEmpty()) {
+            report.append("No trend data available.\n\n");
+        } else {
+            report.append("### Rising Tags\n\n");
+            report.append("| Tag | Count | Growth Rate |\n");
+            report.append("|-----|-------|------------|\n");
+            
+            // Sort trends by growth rate (descending) and get rising tags
+            List<TagTrend> risingTags = tagTrends.values().stream()
+                    .filter(t -> t.getGrowthRate() > 0)
+                    .sorted(Comparator.comparing(TagTrend::getGrowthRate).reversed())
+                    .limit(10)
+                    .collect(Collectors.toList());
+            
+            if (risingTags.isEmpty()) {
+                report.append("No rising tags detected.\n\n");
+            } else {
+                for (TagTrend trend : risingTags) {
+                    report.append(String.format("| `%s` | %d | %.3f |\n", 
+                            trend.getTag(), trend.getTotalCount(), trend.getGrowthRate()));
+                }
+            }
+            
+            report.append("\n### Declining Tags\n\n");
+            report.append("| Tag | Count | Growth Rate |\n");
+            report.append("|-----|-------|------------|\n");
+            
+            // Sort trends by growth rate (ascending) and get declining tags
+            List<TagTrend> decliningTags = tagTrends.values().stream()
+                    .filter(t -> t.getGrowthRate() < 0)
+                    .sorted(Comparator.comparing(TagTrend::getGrowthRate))
+                    .limit(10)
+                    .collect(Collectors.toList());
+            
+            if (decliningTags.isEmpty()) {
+                report.append("No declining tags detected.\n\n");
+            } else {
+                for (TagTrend trend : decliningTags) {
+                    report.append(String.format("| `%s` | %d | %.3f |\n", 
+                            trend.getTag(), trend.getTotalCount(), trend.getGrowthRate()));
+                }
+            }
+        }
+        
         // Low-value tag detection
         report.append("## Potentially Low-Value Tags\n\n");
         List<String> lowValueTags = detectLowValueTags(tagConcordance, features);
@@ -208,21 +346,25 @@ public class ConcordanceFormatter {
             report.append("\n");
         }
         
-        // Tag co-occurrence information (simplified version)
-        report.append("## Common Tag Combinations\n\n");
-        Map<Set<String>, Integer> tagCombinations = findTagCombinations(features);
+        // Statistically significant tags
+        report.append("## Statistically Significant Tags\n\n");
         
-        if (tagCombinations.isEmpty()) {
-            report.append("No common tag combinations found.\n");
+        // Sort tags by significance (descending)
+        List<Map.Entry<String, Double>> significantTags = tagSignificance.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(10)
+                .collect(Collectors.toList());
+        
+        if (significantTags.isEmpty()) {
+            report.append("No significant tags detected.\n\n");
         } else {
-            // Display top 10 tag combinations
-            tagCombinations.entrySet().stream()
-                    .sorted(Map.Entry.<Set<String>, Integer>comparingByValue().reversed())
-                    .limit(10)
-                    .forEach(entry -> {
-                        report.append(String.format("- %s (%d occurrences)\n", 
-                                formatTagSet(entry.getKey()), entry.getValue()));
-                    });
+            report.append("| Tag | Significance Score |\n");
+            report.append("|-----|-------------------|\n");
+            for (Map.Entry<String, Double> entry : significantTags) {
+                report.append(String.format("| `%s` | %.3f |\n", 
+                        entry.getKey(), entry.getValue()));
+            }
+            report.append("\n");
         }
         
         return report.toString();
@@ -231,7 +373,9 @@ public class ConcordanceFormatter {
     /**
      * Generate a tag concordance report in HTML format.
      */
-    private String generateHtmlReport(Map<String, Integer> tagConcordance, List<Feature> features) {
+    private String generateHtmlReport(Map<String, Integer> tagConcordance, List<Feature> features,
+                                    List<CoOccurrence> coOccurrences, Map<String, TagTrend> tagTrends,
+                                    Map<String, Double> tagSignificance, String visualizationJson) {
         StringBuilder report = new StringBuilder();
         int totalTags = tagConcordance.values().stream().mapToInt(Integer::intValue).sum();
         int uniqueTags = tagConcordance.size();
@@ -251,11 +395,25 @@ public class ConcordanceFormatter {
         report.append("    tr:hover { background-color: #f5f5f5; }\n");
         report.append("    .tag { background-color: #e8f4f8; padding: 2px 6px; border-radius: 4px; margin-right: 5px; font-size: 0.8em; }\n");
         report.append("    .low-value { background-color: #f2dede; }\n");
+        report.append("    .rising { background-color: #dff0d8; }\n");
+        report.append("    .declining { background-color: #f2dede; }\n");
+        report.append("    .stable { background-color: #fcf8e3; }\n");
         report.append("    .category { background-color: #dff0d8; }\n");
         report.append("    .summary { background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; }\n");
         report.append("    .progress-bar { background-color: #f2f2f2; border-radius: 4px; height: 20px; margin-top: 5px; }\n");
         report.append("    .progress-value { background-color: #3c7a89; border-radius: 4px; height: 20px; }\n");
+        report.append("    .significant { font-weight: bold; }\n");
+        report.append("    .visualization { width: 100%; height: 600px; margin-top: 20px; margin-bottom: 20px; }\n");
+        report.append("    .tabs { display: flex; overflow: hidden; border: 1px solid #ccc; background-color: #f1f1f1; }\n");
+        report.append("    .tab-button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 16px; transition: 0.3s; font-size: 17px; }\n");
+        report.append("    .tab-button:hover { background-color: #ddd; }\n");
+        report.append("    .tab-button.active { background-color: #ccc; }\n");
+        report.append("    .tab-content { display: none; padding: 20px; border: 1px solid #ccc; border-top: none; }\n");
         report.append("  </style>\n");
+        
+        // D3.js for visualization
+        report.append("  <script src=\"https://d3js.org/d3.v7.min.js\"></script>\n");
+        
         report.append("</head>\n");
         report.append("<body>\n");
         
@@ -272,17 +430,31 @@ public class ConcordanceFormatter {
               .append("</p>\n");
         report.append("  </div>\n");
         
-        // Tag frequency table
-        report.append("  <h2>Tag Frequency</h2>\n");
-        report.append("  <table>\n");
-        report.append("    <tr>\n");
-        report.append("      <th>Tag</th>\n");
-        report.append("      <th>Count</th>\n");
-        report.append("      <th>Percent</th>\n");
-        report.append("      <th>Distribution</th>\n");
-        report.append("    </tr>\n");
+        // Tabs for different analyses
+        report.append("  <div class=\"tabs\">\n");
+        report.append("    <button class=\"tab-button active\" onclick=\"openTab(event, 'frequency')\">Frequency</button>\n");
+        report.append("    <button class=\"tab-button\" onclick=\"openTab(event, 'categories')\">Categories</button>\n");
+        report.append("    <button class=\"tab-button\" onclick=\"openTab(event, 'cooccurrence')\">Co-occurrence</button>\n");
+        report.append("    <button class=\"tab-button\" onclick=\"openTab(event, 'trends')\">Trends</button>\n");
+        report.append("    <button class=\"tab-button\" onclick=\"openTab(event, 'visualization')\">Visualization</button>\n");
+        report.append("    <button class=\"tab-button\" onclick=\"openTab(event, 'significance')\">Significance</button>\n");
+        report.append("  </div>\n");
+        
+        // Frequency tab
+        report.append("  <div id=\"frequency\" class=\"tab-content\" style=\"display: block;\">\n");
+        report.append("    <h2>Tag Frequency</h2>\n");
+        report.append("    <table>\n");
+        report.append("      <tr>\n");
+        report.append("        <th>Tag</th>\n");
+        report.append("        <th>Count</th>\n");
+        report.append("        <th>Percent</th>\n");
+        report.append("        <th>Trend</th>\n");
+        report.append("        <th>Significance</th>\n");
+        report.append("        <th>Distribution</th>\n");
+        report.append("      </tr>\n");
         
         DecimalFormat df = new DecimalFormat("0.0%");
+        DecimalFormat sigFormat = new DecimalFormat("0.000");
         
         // Sort tags by count (descending)
         List<Map.Entry<String, Integer>> sortedTags = tagConcordance.entrySet().stream()
@@ -295,85 +467,435 @@ public class ConcordanceFormatter {
             double percentage = (double) count / totalTags;
             int barWidth = (int) (percentage * 100);
             
-            report.append("    <tr>\n");
-            report.append("      <td><span class=\"tag\">").append(tag).append("</span></td>\n");
-            report.append("      <td>").append(count).append("</td>\n");
-            report.append("      <td>").append(df.format(percentage)).append("</td>\n");
-            report.append("      <td>\n");
-            report.append("        <div class=\"progress-bar\">\n");
-            report.append("          <div class=\"progress-value\" style=\"width: ").append(barWidth).append("%;\"></div>\n");
-            report.append("        </div>\n");
-            report.append("      </td>\n");
-            report.append("    </tr>\n");
+            // Get trend and significance for this tag
+            String trend = tagTrends.containsKey(tag) ? tagTrends.get(tag).getTrend() : "Unknown";
+            double significance = tagSignificance.getOrDefault(tag, 0.0);
+            
+            String trendClass = "";
+            if (trend.equals("Rising")) {
+                trendClass = "rising";
+            } else if (trend.equals("Declining")) {
+                trendClass = "declining";
+            } else if (trend.equals("Stable")) {
+                trendClass = "stable";
+            }
+            
+            String sigClass = significance > 0.1 ? "significant" : "";
+            
+            report.append("      <tr>\n");
+            report.append("        <td><span class=\"tag\">").append(tag).append("</span></td>\n");
+            report.append("        <td>").append(count).append("</td>\n");
+            report.append("        <td>").append(df.format(percentage)).append("</td>\n");
+            report.append("        <td><span class=\"").append(trendClass).append("\">").append(trend).append("</span></td>\n");
+            report.append("        <td class=\"").append(sigClass).append("\">").append(sigFormat.format(significance)).append("</td>\n");
+            report.append("        <td>\n");
+            report.append("          <div class=\"progress-bar\">\n");
+            report.append("            <div class=\"progress-value\" style=\"width: ").append(barWidth).append("%;\"></div>\n");
+            report.append("          </div>\n");
+            report.append("        </td>\n");
+            report.append("      </tr>\n");
         }
         
-        report.append("  </table>\n");
+        report.append("    </table>\n");
+        report.append("  </div>\n");
         
-        // Tag categories analysis
-        report.append("  <h2>Tag Categories</h2>\n");
+        // Categories tab
+        report.append("  <div id=\"categories\" class=\"tab-content\">\n");
+        report.append("    <h2>Tag Categories</h2>\n");
         
         Map<String, List<String>> categorizedTags = categorizeTagsByPrefix(tagConcordance.keySet());
         
         for (Map.Entry<String, List<String>> category : categorizedTags.entrySet()) {
-            report.append("  <h3>").append(category.getKey()).append(" Tags (")
+            report.append("    <h3>").append(category.getKey()).append(" Tags (")
                   .append(category.getValue().size()).append(")</h3>\n");
-            report.append("  <ul>\n");
+            report.append("    <ul>\n");
             
             for (String tag : category.getValue()) {
-                report.append("    <li><span class=\"tag category\">").append(tag)
-                      .append("</span> (").append(tagConcordance.get(tag)).append(")</li>\n");
+                // Get trend for this tag
+                String trend = tagTrends.containsKey(tag) ? tagTrends.get(tag).getTrend() : "Unknown";
+                String trendClass = "";
+                if (trend.equals("Rising")) {
+                    trendClass = "rising";
+                } else if (trend.equals("Declining")) {
+                    trendClass = "declining";
+                } else if (trend.equals("Stable")) {
+                    trendClass = "stable";
+                }
+                
+                report.append("      <li><span class=\"tag category\">").append(tag)
+                      .append("</span> (").append(tagConcordance.get(tag)).append(") ")
+                      .append("<span class=\"").append(trendClass).append("\">[").append(trend).append("]</span></li>\n");
             }
             
-            report.append("  </ul>\n");
+            report.append("    </ul>\n");
         }
+        report.append("  </div>\n");
+        
+        // Co-occurrence tab
+        report.append("  <div id=\"cooccurrence\" class=\"tab-content\">\n");
+        report.append("    <h2>Tag Co-occurrence Metrics</h2>\n");
+        
+        if (coOccurrences.isEmpty()) {
+            report.append("    <p>No tag co-occurrences found.</p>\n");
+        } else {
+            report.append("    <table>\n");
+            report.append("      <tr>\n");
+            report.append("        <th>Tag 1</th>\n");
+            report.append("        <th>Tag 2</th>\n");
+            report.append("        <th>Count</th>\n");
+            report.append("        <th>Coefficient</th>\n");
+            report.append("      </tr>\n");
+            
+            // Display top 20 co-occurrences by coefficient
+            coOccurrences.stream()
+                    .limit(20)
+                    .forEach(co -> {
+                        double coefficient = co.getCoefficient();
+                        String strengthClass = coefficient > 0.7 ? "rising" : 
+                                              (coefficient > 0.4 ? "stable" : "");
+                        
+                        report.append("      <tr>\n");
+                        report.append("        <td><span class=\"tag\">").append(co.getTag1()).append("</span></td>\n");
+                        report.append("        <td><span class=\"tag\">").append(co.getTag2()).append("</span></td>\n");
+                        report.append("        <td>").append(co.getCount()).append("</td>\n");
+                        report.append("        <td class=\"").append(strengthClass).append("\">")
+                              .append(String.format("%.3f", coefficient)).append("</td>\n");
+                        report.append("      </tr>\n");
+                    });
+            
+            report.append("    </table>\n");
+        }
+        report.append("  </div>\n");
+        
+        // Trends tab
+        report.append("  <div id=\"trends\" class=\"tab-content\">\n");
+        report.append("    <h2>Tag Trend Analysis</h2>\n");
+        
+        if (tagTrends.isEmpty()) {
+            report.append("    <p>No trend data available.</p>\n");
+        } else {
+            report.append("    <h3>Rising Tags</h3>\n");
+            report.append("    <table>\n");
+            report.append("      <tr>\n");
+            report.append("        <th>Tag</th>\n");
+            report.append("        <th>Count</th>\n");
+            report.append("        <th>Growth Rate</th>\n");
+            report.append("        <th>Associated Tags</th>\n");
+            report.append("      </tr>\n");
+            
+            // Sort trends by growth rate (descending) and get rising tags
+            List<TagTrend> risingTags = tagTrends.values().stream()
+                    .filter(t -> t.getGrowthRate() > 0)
+                    .sorted(Comparator.comparing(TagTrend::getGrowthRate).reversed())
+                    .limit(10)
+                    .collect(Collectors.toList());
+            
+            if (risingTags.isEmpty()) {
+                report.append("      <tr><td colspan=\"4\">No rising tags detected.</td></tr>\n");
+            } else {
+                for (TagTrend trend : risingTags) {
+                    report.append("      <tr>\n");
+                    report.append("        <td><span class=\"tag rising\">").append(trend.getTag()).append("</span></td>\n");
+                    report.append("        <td>").append(trend.getTotalCount()).append("</td>\n");
+                    report.append("        <td>").append(String.format("%.3f", trend.getGrowthRate())).append("</td>\n");
+                    report.append("        <td>\n");
+                    
+                    // Get top 3 associated tags
+                    trend.getAssociatedTags().entrySet().stream()
+                            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                            .limit(3)
+                            .forEach(assoc -> {
+                                report.append("          <span class=\"tag\">").append(assoc.getKey())
+                                      .append(" (").append(assoc.getValue()).append(")</span>\n");
+                            });
+                    
+                    report.append("        </td>\n");
+                    report.append("      </tr>\n");
+                }
+            }
+            
+            report.append("    </table>\n");
+            
+            report.append("    <h3>Declining Tags</h3>\n");
+            report.append("    <table>\n");
+            report.append("      <tr>\n");
+            report.append("        <th>Tag</th>\n");
+            report.append("        <th>Count</th>\n");
+            report.append("        <th>Growth Rate</th>\n");
+            report.append("        <th>Associated Tags</th>\n");
+            report.append("      </tr>\n");
+            
+            // Sort trends by growth rate (ascending) and get declining tags
+            List<TagTrend> decliningTags = tagTrends.values().stream()
+                    .filter(t -> t.getGrowthRate() < 0)
+                    .sorted(Comparator.comparing(TagTrend::getGrowthRate))
+                    .limit(10)
+                    .collect(Collectors.toList());
+            
+            if (decliningTags.isEmpty()) {
+                report.append("      <tr><td colspan=\"4\">No declining tags detected.</td></tr>\n");
+            } else {
+                for (TagTrend trend : decliningTags) {
+                    report.append("      <tr>\n");
+                    report.append("        <td><span class=\"tag declining\">").append(trend.getTag()).append("</span></td>\n");
+                    report.append("        <td>").append(trend.getTotalCount()).append("</td>\n");
+                    report.append("        <td>").append(String.format("%.3f", trend.getGrowthRate())).append("</td>\n");
+                    report.append("        <td>\n");
+                    
+                    // Get top 3 associated tags
+                    trend.getAssociatedTags().entrySet().stream()
+                            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                            .limit(3)
+                            .forEach(assoc -> {
+                                report.append("          <span class=\"tag\">").append(assoc.getKey())
+                                      .append(" (").append(assoc.getValue()).append(")</span>\n");
+                            });
+                    
+                    report.append("        </td>\n");
+                    report.append("      </tr>\n");
+                }
+            }
+            
+            report.append("    </table>\n");
+        }
+        report.append("  </div>\n");
+        
+        // Visualization tab
+        report.append("  <div id=\"visualization\" class=\"tab-content\">\n");
+        report.append("    <h2>Tag Relationship Visualization</h2>\n");
+        report.append("    <p>This force-directed graph shows the relationships between tags. Stronger connections (higher co-occurrence coefficient) are shown with thicker lines.</p>\n");
+        report.append("    <p>Hover over nodes and links to see details. Drag nodes to explore relationships.</p>\n");
+        report.append("    <div id=\"tag-graph\" class=\"visualization\"></div>\n");
+        
+        // Embed D3.js visualization
+        report.append("    <script>\n");
+        report.append("      // Tag relationship data\n");
+        report.append("      const graphData = ").append(visualizationJson).append(";\n\n");
+        
+        report.append("      // Force-directed graph visualization\n");
+        report.append("      function createForceGraph() {\n");
+        report.append("        const width = document.getElementById('tag-graph').clientWidth;\n");
+        report.append("        const height = 600;\n");
+        report.append("        \n");
+        report.append("        // Color scale for tag groups\n");
+        report.append("        const color = d3.scaleOrdinal(d3.schemeCategory10);\n");
+        report.append("        \n");
+        report.append("        // Node size scale based on count\n");
+        report.append("        const nodeSize = d3.scaleLinear()\n");
+        report.append("          .domain([0, d3.max(graphData.nodes, d => d.count)])\n");
+        report.append("          .range([5, 25]);\n");
+        report.append("        \n");
+        report.append("        // Link width scale based on strength\n");
+        report.append("        const linkWidth = d3.scaleLinear()\n");
+        report.append("          .domain([0, d3.max(graphData.links, d => d.strength)])\n");
+        report.append("          .range([1, 10]);\n");
+        report.append("        \n");
+        report.append("        // Create SVG\n");
+        report.append("        const svg = d3.select('#tag-graph')\n");
+        report.append("          .append('svg')\n");
+        report.append("          .attr('width', width)\n");
+        report.append("          .attr('height', height);\n");
+        report.append("        \n");
+        report.append("        // Create tooltip\n");
+        report.append("        const tooltip = d3.select('body')\n");
+        report.append("          .append('div')\n");
+        report.append("          .style('position', 'absolute')\n");
+        report.append("          .style('background', '#f9f9f9')\n");
+        report.append("          .style('padding', '5px')\n");
+        report.append("          .style('border', '1px solid #ccc')\n");
+        report.append("          .style('border-radius', '5px')\n");
+        report.append("          .style('pointer-events', 'none')\n");
+        report.append("          .style('opacity', 0);\n");
+        report.append("        \n");
+        report.append("        // Create simulation\n");
+        report.append("        const simulation = d3.forceSimulation(graphData.nodes)\n");
+        report.append("          .force('link', d3.forceLink(graphData.links).id(d => d.id).distance(100))\n");
+        report.append("          .force('charge', d3.forceManyBody().strength(-300))\n");
+        report.append("          .force('center', d3.forceCenter(width / 2, height / 2))\n");
+        report.append("          .force('collide', d3.forceCollide().radius(d => nodeSize(d.count) + 10));\n");
+        report.append("        \n");
+        report.append("        // Create links\n");
+        report.append("        const link = svg.append('g')\n");
+        report.append("          .selectAll('line')\n");
+        report.append("          .data(graphData.links)\n");
+        report.append("          .enter().append('line')\n");
+        report.append("          .attr('stroke-width', d => linkWidth(d.strength))\n");
+        report.append("          .attr('stroke', '#999')\n");
+        report.append("          .attr('stroke-opacity', 0.6)\n");
+        report.append("          .on('mouseover', function(event, d) {\n");
+        report.append("            tooltip.transition().duration(200).style('opacity', .9);\n");
+        report.append("            tooltip.html(`<strong>${d.source.id} & ${d.target.id}</strong><br/>Coefficient: ${d.strength.toFixed(3)}<br/>Count: ${d.value}`)\n");
+        report.append("              .style('left', (event.pageX + 10) + 'px')\n");
+        report.append("              .style('top', (event.pageY - 28) + 'px');\n");
+        report.append("          })\n");
+        report.append("          .on('mouseout', function() {\n");
+        report.append("            tooltip.transition().duration(500).style('opacity', 0);\n");
+        report.append("          });\n");
+        report.append("        \n");
+        report.append("        // Create nodes\n");
+        report.append("        const node = svg.append('g')\n");
+        report.append("          .selectAll('circle')\n");
+        report.append("          .data(graphData.nodes)\n");
+        report.append("          .enter().append('circle')\n");
+        report.append("          .attr('r', d => nodeSize(d.count))\n");
+        report.append("          .attr('fill', d => color(d.group))\n");
+        report.append("          .attr('stroke', '#fff')\n");
+        report.append("          .attr('stroke-width', 1.5)\n");
+        report.append("          .on('mouseover', function(event, d) {\n");
+        report.append("            tooltip.transition().duration(200).style('opacity', .9);\n");
+        report.append("            tooltip.html(`<strong>${d.id}</strong><br/>Count: ${d.count}`)\n");
+        report.append("              .style('left', (event.pageX + 10) + 'px')\n");
+        report.append("              .style('top', (event.pageY - 28) + 'px');\n");
+        report.append("          })\n");
+        report.append("          .on('mouseout', function() {\n");
+        report.append("            tooltip.transition().duration(500).style('opacity', 0);\n");
+        report.append("          })\n");
+        report.append("          .call(d3.drag()\n");
+        report.append("            .on('start', dragstarted)\n");
+        report.append("            .on('drag', dragged)\n");
+        report.append("            .on('end', dragended));\n");
+        report.append("        \n");
+        report.append("        // Add labels\n");
+        report.append("        const label = svg.append('g')\n");
+        report.append("          .selectAll('text')\n");
+        report.append("          .data(graphData.nodes)\n");
+        report.append("          .enter().append('text')\n");
+        report.append("          .text(d => d.id)\n");
+        report.append("          .attr('font-size', 10)\n");
+        report.append("          .attr('dx', 12)\n");
+        report.append("          .attr('dy', '.35em');\n");
+        report.append("        \n");
+        report.append("        // Update positions on tick\n");
+        report.append("        simulation.on('tick', () => {\n");
+        report.append("          link\n");
+        report.append("            .attr('x1', d => d.source.x)\n");
+        report.append("            .attr('y1', d => d.source.y)\n");
+        report.append("            .attr('x2', d => d.target.x)\n");
+        report.append("            .attr('y2', d => d.target.y);\n");
+        report.append("          \n");
+        report.append("          node\n");
+        report.append("            .attr('cx', d => d.x = Math.max(nodeSize(d.count), Math.min(width - nodeSize(d.count), d.x)))\n");
+        report.append("            .attr('cy', d => d.y = Math.max(nodeSize(d.count), Math.min(height - nodeSize(d.count), d.y)));\n");
+        report.append("          \n");
+        report.append("          label\n");
+        report.append("            .attr('x', d => d.x)\n");
+        report.append("            .attr('y', d => d.y);\n");
+        report.append("        });\n");
+        report.append("        \n");
+        report.append("        // Drag functions\n");
+        report.append("        function dragstarted(event, d) {\n");
+        report.append("          if (!event.active) simulation.alphaTarget(0.3).restart();\n");
+        report.append("          d.fx = d.x;\n");
+        report.append("          d.fy = d.y;\n");
+        report.append("        }\n");
+        report.append("        \n");
+        report.append("        function dragged(event, d) {\n");
+        report.append("          d.fx = event.x;\n");
+        report.append("          d.fy = event.y;\n");
+        report.append("        }\n");
+        report.append("        \n");
+        report.append("        function dragended(event, d) {\n");
+        report.append("          if (!event.active) simulation.alphaTarget(0);\n");
+        report.append("          d.fx = null;\n");
+        report.append("          d.fy = null;\n");
+        report.append("        }\n");
+        report.append("      }\n");
+        report.append("      \n");
+        report.append("      // Create visualization when tab is opened\n");
+        report.append("      document.querySelector('button[onclick=\"openTab(event, \\'visualization\\')\"]')\n");
+        report.append("        .addEventListener('click', function() {\n");
+        report.append("          setTimeout(() => {\n");
+        report.append("            if (document.getElementById('tag-graph').innerHTML === '') {\n");
+        report.append("              createForceGraph();\n");
+        report.append("            }\n");
+        report.append("          }, 100);\n");
+        report.append("        });\n");
+        report.append("    </script>\n");
+        report.append("  </div>\n");
+        
+        // Significance tab
+        report.append("  <div id=\"significance\" class=\"tab-content\">\n");
+        report.append("    <h2>Tag Significance Analysis</h2>\n");
         
         // Low-value tag detection
-        report.append("  <h2>Potentially Low-Value Tags</h2>\n");
+        report.append("    <h3>Potentially Low-Value Tags</h3>\n");
         List<String> lowValueTags = detectLowValueTags(tagConcordance, features);
         
         if (lowValueTags.isEmpty()) {
-            report.append("  <p>No low-value tags detected.</p>\n");
+            report.append("    <p>No low-value tags detected.</p>\n");
         } else {
-            report.append("  <ul>\n");
+            report.append("    <ul>\n");
             for (String tag : lowValueTags) {
-                report.append("    <li><span class=\"tag low-value\">").append(tag)
+                report.append("      <li><span class=\"tag low-value\">").append(tag)
                       .append("</span> (Count: ").append(tagConcordance.get(tag)).append(")</li>\n");
             }
-            report.append("  </ul>\n");
+            report.append("    </ul>\n");
         }
         
-        // Tag co-occurrence information (simplified version)
-        report.append("  <h2>Common Tag Combinations</h2>\n");
-        Map<Set<String>, Integer> tagCombinations = findTagCombinations(features);
+        // Statistically significant tags
+        report.append("    <h3>Statistically Significant Tags</h3>\n");
         
-        if (tagCombinations.isEmpty()) {
-            report.append("  <p>No common tag combinations found.</p>\n");
+        // Sort tags by significance (descending)
+        List<Map.Entry<String, Double>> significantTags = tagSignificance.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(15)
+                .collect(Collectors.toList());
+        
+        if (significantTags.isEmpty()) {
+            report.append("    <p>No significant tags detected.</p>\n");
         } else {
-            report.append("  <table>\n");
-            report.append("    <tr>\n");
-            report.append("      <th>Combination</th>\n");
-            report.append("      <th>Occurrences</th>\n");
-            report.append("    </tr>\n");
+            report.append("    <table>\n");
+            report.append("      <tr>\n");
+            report.append("        <th>Tag</th>\n");
+            report.append("        <th>Count</th>\n");
+            report.append("        <th>Significance Score</th>\n");
+            report.append("        <th>Trend</th>\n");
+            report.append("      </tr>\n");
             
-            // Display top 10 tag combinations
-            tagCombinations.entrySet().stream()
-                    .sorted(Map.Entry.<Set<String>, Integer>comparingByValue().reversed())
-                    .limit(10)
-                    .forEach(entry -> {
-                        report.append("    <tr>\n");
-                        report.append("      <td>\n");
-                        
-                        for (String tag : entry.getKey()) {
-                            report.append("        <span class=\"tag\">").append(tag).append("</span>\n");
-                        }
-                        
-                        report.append("      </td>\n");
-                        report.append("      <td>").append(entry.getValue()).append("</td>\n");
-                        report.append("    </tr>\n");
-                    });
+            for (Map.Entry<String, Double> entry : significantTags) {
+                String tag = entry.getKey();
+                double score = entry.getValue();
+                
+                // Get count and trend for this tag
+                int count = tagConcordance.getOrDefault(tag, 0);
+                String trend = tagTrends.containsKey(tag) ? tagTrends.get(tag).getTrend() : "Unknown";
+                String trendClass = "";
+                if (trend.equals("Rising")) {
+                    trendClass = "rising";
+                } else if (trend.equals("Declining")) {
+                    trendClass = "declining";
+                } else if (trend.equals("Stable")) {
+                    trendClass = "stable";
+                }
+                
+                report.append("      <tr>\n");
+                report.append("        <td><span class=\"tag\">").append(tag).append("</span></td>\n");
+                report.append("        <td>").append(count).append("</td>\n");
+                report.append("        <td class=\"significant\">").append(String.format("%.3f", score)).append("</td>\n");
+                report.append("        <td><span class=\"").append(trendClass).append("\">").append(trend).append("</span></td>\n");
+                report.append("      </tr>\n");
+            }
             
-            report.append("  </table>\n");
+            report.append("    </table>\n");
         }
+        report.append("  </div>\n");
+        
+        // Tab navigation script
+        report.append("  <script>\n");
+        report.append("    function openTab(evt, tabName) {\n");
+        report.append("      var i, tabcontent, tablinks;\n");
+        report.append("      tabcontent = document.getElementsByClassName(\"tab-content\");\n");
+        report.append("      for (i = 0; i < tabcontent.length; i++) {\n");
+        report.append("        tabcontent[i].style.display = \"none\";\n");
+        report.append("      }\n");
+        report.append("      tablinks = document.getElementsByClassName(\"tab-button\");\n");
+        report.append("      for (i = 0; i < tablinks.length; i++) {\n");
+        report.append("        tablinks[i].className = tablinks[i].className.replace(\" active\", \"\");\n");
+        report.append("      }\n");
+        report.append("      document.getElementById(tabName).style.display = \"block\";\n");
+        report.append("      evt.currentTarget.className += \" active\";\n");
+        report.append("    }\n");
+        report.append("  </script>\n");
         
         report.append("</body>\n");
         report.append("</html>");
@@ -384,7 +906,9 @@ public class ConcordanceFormatter {
     /**
      * Generate a tag concordance report in JSON format.
      */
-    private String generateJsonReport(Map<String, Integer> tagConcordance, List<Feature> features) {
+    private String generateJsonReport(Map<String, Integer> tagConcordance, List<Feature> features,
+                                    List<CoOccurrence> coOccurrences, Map<String, TagTrend> tagTrends,
+                                    Map<String, Double> tagSignificance, String visualizationJson) {
         StringBuilder json = new StringBuilder();
         int totalTags = tagConcordance.values().stream().mapToInt(Integer::intValue).sum();
         int uniqueTags = tagConcordance.size();
@@ -402,7 +926,7 @@ public class ConcordanceFormatter {
             .append("\n");
         json.append("    },\n");
         
-        // Tag frequency
+        // Tag frequency with trend and significance data
         json.append("    \"tagFrequency\": [\n");
         
         // Sort tags by count (descending)
@@ -416,10 +940,18 @@ public class ConcordanceFormatter {
             int count = entry.getValue();
             double percentage = (double) count / totalTags;
             
+            // Get trend and significance for this tag
+            String trend = tagTrends.containsKey(tag) ? tagTrends.get(tag).getTrend() : "Unknown";
+            double significance = tagSignificance.getOrDefault(tag, 0.0);
+            double growthRate = tagTrends.containsKey(tag) ? tagTrends.get(tag).getGrowthRate() : 0.0;
+            
             json.append("      {\n");
             json.append("        \"tag\": \"").append(escapeJson(tag)).append("\",\n");
             json.append("        \"count\": ").append(count).append(",\n");
-            json.append("        \"percentage\": ").append(String.format("%.4f", percentage)).append("\n");
+            json.append("        \"percentage\": ").append(String.format("%.4f", percentage)).append(",\n");
+            json.append("        \"trend\": \"").append(escapeJson(trend)).append("\",\n");
+            json.append("        \"growthRate\": ").append(String.format("%.4f", growthRate)).append(",\n");
+            json.append("        \"significance\": ").append(String.format("%.4f", significance)).append("\n");
             json.append("      }");
             
             if (i < sortedTags.size() - 1) {
@@ -429,6 +961,127 @@ public class ConcordanceFormatter {
         }
         
         json.append("    ],\n");
+        
+        // Tag co-occurrence metrics
+        json.append("    \"coOccurrences\": [\n");
+        
+        for (int i = 0; i < Math.min(coOccurrences.size(), 20); i++) {
+            CoOccurrence co = coOccurrences.get(i);
+            
+            json.append("      {\n");
+            json.append("        \"tag1\": \"").append(escapeJson(co.getTag1())).append("\",\n");
+            json.append("        \"tag2\": \"").append(escapeJson(co.getTag2())).append("\",\n");
+            json.append("        \"count\": ").append(co.getCount()).append(",\n");
+            json.append("        \"coefficient\": ").append(String.format("%.4f", co.getCoefficient())).append("\n");
+            json.append("      }");
+            
+            if (i < Math.min(coOccurrences.size(), 20) - 1) {
+                json.append(",");
+            }
+            json.append("\n");
+        }
+        
+        json.append("    ],\n");
+        
+        // Tag trends
+        json.append("    \"tagTrends\": {\n");
+        json.append("      \"rising\": [\n");
+        
+        // Get rising tags
+        List<TagTrend> risingTags = tagTrends.values().stream()
+                .filter(t -> t.getGrowthRate() > 0)
+                .sorted(Comparator.comparing(TagTrend::getGrowthRate).reversed())
+                .limit(10)
+                .collect(Collectors.toList());
+        
+        for (int i = 0; i < risingTags.size(); i++) {
+            TagTrend trend = risingTags.get(i);
+            
+            json.append("        {\n");
+            json.append("          \"tag\": \"").append(escapeJson(trend.getTag())).append("\",\n");
+            json.append("          \"count\": ").append(trend.getTotalCount()).append(",\n");
+            json.append("          \"growthRate\": ").append(String.format("%.4f", trend.getGrowthRate())).append(",\n");
+            json.append("          \"scenarioCount\": ").append(trend.getScenarioCount()).append(",\n");
+            json.append("          \"featureCount\": ").append(trend.getFeatureCount()).append(",\n");
+            json.append("          \"associatedTags\": [");
+            
+            // Get top 3 associated tags
+            List<Map.Entry<String, Integer>> associatedTags = trend.getAssociatedTags().entrySet().stream()
+                    .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                    .limit(3)
+                    .collect(Collectors.toList());
+            
+            for (int j = 0; j < associatedTags.size(); j++) {
+                Map.Entry<String, Integer> assoc = associatedTags.get(j);
+                json.append("\n            {\n");
+                json.append("              \"tag\": \"").append(escapeJson(assoc.getKey())).append("\",\n");
+                json.append("              \"count\": ").append(assoc.getValue()).append("\n");
+                json.append("            }");
+                
+                if (j < associatedTags.size() - 1) {
+                    json.append(",");
+                }
+            }
+            
+            json.append("\n          ]\n");
+            json.append("        }");
+            
+            if (i < risingTags.size() - 1) {
+                json.append(",");
+            }
+            json.append("\n");
+        }
+        
+        json.append("      ],\n");
+        json.append("      \"declining\": [\n");
+        
+        // Get declining tags
+        List<TagTrend> decliningTags = tagTrends.values().stream()
+                .filter(t -> t.getGrowthRate() < 0)
+                .sorted(Comparator.comparing(TagTrend::getGrowthRate))
+                .limit(10)
+                .collect(Collectors.toList());
+        
+        for (int i = 0; i < decliningTags.size(); i++) {
+            TagTrend trend = decliningTags.get(i);
+            
+            json.append("        {\n");
+            json.append("          \"tag\": \"").append(escapeJson(trend.getTag())).append("\",\n");
+            json.append("          \"count\": ").append(trend.getTotalCount()).append(",\n");
+            json.append("          \"growthRate\": ").append(String.format("%.4f", trend.getGrowthRate())).append(",\n");
+            json.append("          \"scenarioCount\": ").append(trend.getScenarioCount()).append(",\n");
+            json.append("          \"featureCount\": ").append(trend.getFeatureCount()).append(",\n");
+            json.append("          \"associatedTags\": [");
+            
+            // Get top 3 associated tags
+            List<Map.Entry<String, Integer>> associatedTags = trend.getAssociatedTags().entrySet().stream()
+                    .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                    .limit(3)
+                    .collect(Collectors.toList());
+            
+            for (int j = 0; j < associatedTags.size(); j++) {
+                Map.Entry<String, Integer> assoc = associatedTags.get(j);
+                json.append("\n            {\n");
+                json.append("              \"tag\": \"").append(escapeJson(assoc.getKey())).append("\",\n");
+                json.append("              \"count\": ").append(assoc.getValue()).append("\n");
+                json.append("            }");
+                
+                if (j < associatedTags.size() - 1) {
+                    json.append(",");
+                }
+            }
+            
+            json.append("\n          ]\n");
+            json.append("        }");
+            
+            if (i < decliningTags.size() - 1) {
+                json.append(",");
+            }
+            json.append("\n");
+        }
+        
+        json.append("      ]\n");
+        json.append("    },\n");
         
         // Tag categories
         json.append("    \"tagCategories\": {\n");
@@ -442,10 +1095,12 @@ public class ConcordanceFormatter {
             List<String> tags = category.getValue();
             for (int i = 0; i < tags.size(); i++) {
                 String tag = tags.get(i);
+                String trend = tagTrends.containsKey(tag) ? tagTrends.get(tag).getTrend() : "Unknown";
                 
                 json.append("        {\n");
                 json.append("          \"tag\": \"").append(escapeJson(tag)).append("\",\n");
-                json.append("          \"count\": ").append(tagConcordance.get(tag)).append("\n");
+                json.append("          \"count\": ").append(tagConcordance.get(tag)).append(",\n");
+                json.append("          \"trend\": \"").append(trend).append("\"\n");
                 json.append("        }");
                 
                 if (i < tags.size() - 1) {
@@ -487,43 +1142,37 @@ public class ConcordanceFormatter {
         
         json.append("    ],\n");
         
-        // Tag combinations
-        json.append("    \"tagCombinations\": [\n");
+        // Significant tags
+        json.append("    \"significantTags\": [\n");
         
-        Map<Set<String>, Integer> tagCombinations = findTagCombinations(features);
-        
-        // Display top 10 tag combinations
-        List<Map.Entry<Set<String>, Integer>> topCombinations = tagCombinations.entrySet().stream()
-                .sorted(Map.Entry.<Set<String>, Integer>comparingByValue().reversed())
-                .limit(10)
+        // Sort tags by significance (descending)
+        List<Map.Entry<String, Double>> significantTags = tagSignificance.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(15)
                 .collect(Collectors.toList());
         
-        for (int i = 0; i < topCombinations.size(); i++) {
-            Map.Entry<Set<String>, Integer> entry = topCombinations.get(i);
+        for (int i = 0; i < significantTags.size(); i++) {
+            Map.Entry<String, Double> entry = significantTags.get(i);
+            String tag = entry.getKey();
+            double score = entry.getValue();
             
             json.append("      {\n");
-            json.append("        \"tags\": [");
-            
-            List<String> tagList = new ArrayList<>(entry.getKey());
-            for (int j = 0; j < tagList.size(); j++) {
-                json.append("\"").append(escapeJson(tagList.get(j))).append("\"");
-                
-                if (j < tagList.size() - 1) {
-                    json.append(", ");
-                }
-            }
-            
-            json.append("],\n");
-            json.append("        \"occurrences\": ").append(entry.getValue()).append("\n");
+            json.append("        \"tag\": \"").append(escapeJson(tag)).append("\",\n");
+            json.append("        \"count\": ").append(tagConcordance.getOrDefault(tag, 0)).append(",\n");
+            json.append("        \"significance\": ").append(String.format("%.4f", score)).append("\n");
             json.append("      }");
             
-            if (i < topCombinations.size() - 1) {
+            if (i < significantTags.size() - 1) {
                 json.append(",");
             }
             json.append("\n");
         }
         
-        json.append("    ]\n");
+        json.append("    ],\n");
+        
+        // Visualization data (D3.js compatible)
+        json.append("    \"visualization\": ").append(visualizationJson).append("\n");
+        
         json.append("  }\n");
         json.append("}");
         

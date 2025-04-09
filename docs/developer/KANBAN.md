@@ -30,11 +30,11 @@
   - [x] Improve heading structure in Markdown output
   - [x] Add pagination for large TOCs
 
-- [ ] Improve tag concordance report
-  - [ ] Add tag co-occurrence metrics
-  - [ ] Include tag trend analysis
-  - [ ] Visualize tag relationships
-  - [ ] Add statistical significance indicators
+- [x] Improve tag concordance report
+  - [x] Add tag co-occurrence metrics
+  - [x] Include tag trend analysis
+  - [x] Visualize tag relationships
+  - [x] Add statistical significance indicators
 
 - [ ] Enhance warning system for tag detection
   - [ ] Add custom warning severity levels
