@@ -19,11 +19,15 @@ import java.util.*;
 
 /**
  * Main utility class for ftoc - Feature Table of Contents Utility.
- * This is a refactored version that uses the new architecture with clear separation of concerns.
+ * This is a refactored version that uses the new architecture with clear separation of concerns,
+ * dependency injection, and the plugin system.
+ *
+ * This is the RECOMMENDED implementation for all new usage.
+ *
+ * @see FtocUtility for the deprecated legacy implementation
  */
-public class FtocUtilityRefactored {
+public class FtocUtilityRefactored extends AbstractFtocUtility {
     private static final Logger logger = LoggerFactory.getLogger(FtocUtilityRefactored.class);
-    private static final String VERSION = loadVersion();
     
     private final FeatureRepository repository;
     private final FeatureProcessor processor;
@@ -91,15 +95,10 @@ public class FtocUtilityRefactored {
     /**
      * Initialize the utility.
      */
+    @Override
     public void initialize() {
-        logger.info("FTOC utility version {} initialized.", VERSION);
-        
-        // Add JVM info for performance monitoring
-        Runtime runtime = Runtime.getRuntime();
-        logger.debug("JVM information - Max Memory: {} MB, Available Processors: {}", 
-                runtime.maxMemory() / (1024 * 1024),
-                runtime.availableProcessors());
-        
+        super.initialize();
+
         // Trigger startup event for plugins
         if (pluginRegistry != null) {
             pluginRegistry.triggerEvent(com.heymumford.ftoc.plugin.PluginEvent.STARTUP);
@@ -355,63 +354,6 @@ public class FtocUtilityRefactored {
         }
     }
 
-    /**
-     * Load the version from properties.
-     */
-    private static String loadVersion() {
-        Properties properties = new Properties();
-        try (InputStream input = FtocUtilityRefactored.class.getClassLoader().getResourceAsStream("ftoc-version.properties")) {
-            if (input == null) {
-                return "unknown";
-            }
-            properties.load(input);
-            return properties.getProperty("version", "unknown");
-        } catch (IOException e) {
-            return "unknown";
-        }
-    }
-
-    /**
-     * Print help/usage information.
-     */
-    private static void printHelp() {
-        System.out.println("FTOC Utility version " + VERSION);
-        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--analyze-tags] [--detect-anti-patterns] [--format <format>] [--config-file <file>] [--show-config] [--junit-report] [--performance] [--benchmark] [--version | -v] [--help]");
-        System.out.println("Options:");
-        System.out.println("  -d <directory>      Specify the directory to analyze (default: current directory)");
-        System.out.println("  -f <format>         Specify output format (text, md, html, json, junit) (default: text)");
-        System.out.println("                      Same as --format");
-        System.out.println("  --format <format>   Specify output format for all reports (text, md, html, json, junit)");
-        System.out.println("                      This is a shorthand to set all format options at once");
-        System.out.println("  --tags <tags>       Include only scenarios with at least one of these tags");
-        System.out.println("                      Comma-separated list, e.g. \"@P0,@Smoke\"");
-        System.out.println("  --exclude-tags <tags> Exclude scenarios with any of these tags");
-        System.out.println("                      Comma-separated list, e.g. \"@Flaky,@Debug\"");
-        System.out.println("  --concordance       Generate detailed tag concordance report instead of TOC");
-        System.out.println("  --analyze-tags      Perform tag quality analysis and generate warnings report");
-        System.out.println("  --detect-anti-patterns");
-        System.out.println("                      Detect common anti-patterns in feature files and generate warnings");
-        System.out.println("  --junit-report      Output all reports in JUnit XML format (for CI integration)");
-        System.out.println("                      This is a shorthand for setting all format options to junit");
-        System.out.println("  --config-file <file>");
-        System.out.println("                      Specify a custom warning configuration file");
-        System.out.println("                      (default: looks for .ftoc/config.yml, .ftoc.yml, etc.)");
-        System.out.println("  --show-config       Display the current warning configuration and exit");
-        System.out.println("  --performance       Enable performance monitoring and optimizations");
-        System.out.println("                      Will use parallel processing for large repositories");
-        System.out.println("  --list-plugins      List all loaded plugins and exit");
-        System.out.println("  --benchmark         Run performance benchmarks (see benchmark options below)");
-        System.out.println("  --version, -v       Display version information");
-        System.out.println("  --help              Display this help message");
-        System.out.println("\nBenchmark Options (used with --benchmark):");
-        System.out.println("  --small             Run benchmarks on small repositories (10 files)");
-        System.out.println("  --medium            Run benchmarks on medium repositories (50 files)");
-        System.out.println("  --large             Run benchmarks on large repositories (200 files)");
-        System.out.println("  --very-large        Run benchmarks on very large repositories (500 files)");
-        System.out.println("  --all               Run benchmarks on all repository sizes");
-        System.out.println("  --report <file>     Specify report output file (default: benchmark-report.txt)");
-        System.out.println("  --no-cleanup        Do not delete temporary files after benchmark");
-    }
 
     /**
      * Main entry point for the command-line utility.
