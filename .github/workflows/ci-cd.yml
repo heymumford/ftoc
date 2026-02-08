@@ -75,14 +75,14 @@ jobs:
         fi
     - name: Upload test reports
       if: success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: test-reports-${{ matrix.os }}
         path: target/surefire-reports/*.xml
     
     - name: Upload coverage report
       if: matrix.os == 'ubuntu-latest' && (success() || failure())
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: jacoco-report
         path: |
@@ -97,7 +97,7 @@ jobs:
         mvn verify -Dtest=karate.KarateRunner#testParallel
     - name: Upload Karate reports
       if: success() || failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: karate-reports-${{ matrix.os }}
         path: |
@@ -134,7 +134,7 @@ jobs:
           exit 1
         fi
     - name: Upload built artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: ftoc-jar-${{ matrix.os }}
         path: target/ftoc-*.jar
@@ -161,7 +161,7 @@ jobs:
         generate-summary: true
     
     - name: Upload coverage badges
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: coverage-badges
         path: .github/badges
@@ -234,7 +234,7 @@ jobs:
         NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
     - name: Upload dependency check report
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: dependency-check-report
         path: target/dependency-check-report.html
@@ -304,7 +304,7 @@ jobs:
           --directory src/test/resources/ftoc/test-feature-files \
           --output-directory target/ftoc-analysis
     - name: Upload analysis results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v6
       with:
         name: feature-analysis
         path: target/ftoc-analysis/*.xml
