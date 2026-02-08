@@ -146,7 +146,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Download coverage report
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v7
       with:
         name: jacoco-report
         path: ./jacoco-report/
@@ -216,7 +216,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Download built artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v7
       with:
         name: ftoc-jar-ubuntu-latest
         path: target/
@@ -286,7 +286,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Download built artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v7
       with:
         name: ftoc-jar-ubuntu-latest
         path: target/
@@ -333,17 +333,17 @@ jobs:
         server-username: GITHUB_ACTOR
         server-password: GITHUB_TOKEN
     - name: Download Linux build artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v7
       with:
         name: ftoc-jar-ubuntu-latest
         path: target/linux/
     - name: Download macOS build artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v7
       with:
         name: ftoc-jar-macos-latest
         path: target/macos/
     - name: Download Windows build artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v7
       with:
         name: ftoc-jar-windows-latest
         path: target/windows/
@@ -368,7 +368,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Download cross-platform artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v7
       with:
         path: ./artifacts/
     - name: Prepare release assets
