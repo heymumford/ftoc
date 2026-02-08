@@ -36,7 +36,7 @@ jobs:
         
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: Release v${{ steps.get_version.outputs.VERSION }}
           body_path: changelog-entry.md
