@@ -105,7 +105,7 @@ jobs:
           target/karate-reports/*.xml
     - name: Publish Karate Test Results
       if: success() || failure()
-      uses: mikepenz/action-junit-report@v3
+      uses: mikepenz/action-junit-report@v6
       with:
         report_paths: 'target/karate-reports/*.xml'
         check_name: 'Karate Test Report (${{ matrix.os }})'
@@ -309,7 +309,7 @@ jobs:
         name: feature-analysis
         path: target/ftoc-analysis/*.xml
     - name: Publish Analysis Report
-      uses: mikepenz/action-junit-report@v3
+      uses: mikepenz/action-junit-report@v6
       if: always()
       with:
         report_paths: 'target/ftoc-analysis/*.xml'
