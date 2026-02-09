@@ -31,7 +31,7 @@ jobs:
     name: Validate
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Set up JDK 11
       uses: actions/setup-java@v3
       with:
@@ -60,7 +60,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Set up JDK 11
       uses: actions/setup-java@v3
       with:
@@ -146,7 +146,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Download coverage report
       uses: actions/download-artifact@v3
       with:
@@ -216,7 +216,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Download built artifacts
       uses: actions/download-artifact@v3
       with:
@@ -286,7 +286,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'workflow_dispatch' || github.event.inputs.run_analysis == 'true'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Download built artifact
       uses: actions/download-artifact@v3
       with:
@@ -324,7 +324,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true'))
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Set up JDK 11
       uses: actions/setup-java@v3
       with:
@@ -368,7 +368,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     - name: Download cross-platform artifacts
       uses: actions/download-artifact@v3
       with:
