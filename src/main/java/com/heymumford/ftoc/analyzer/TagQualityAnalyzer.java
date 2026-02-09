@@ -15,33 +15,38 @@ public class TagQualityAnalyzer {
 
     // Default patterns for tag categorization (can be overridden by configuration)
     private static final List<String> DEFAULT_PRIORITY_TAGS = Arrays.asList(
-            "@p0", "@p1", "@p2", "@p3", "@p4", 
+            "@p0", "@p1", "@p2", "@p3", "@p4",
             "@critical", "@high", "@medium", "@low",
             "@priority0", "@priority1", "@priority2", "@priority3");
-            
+
     private static final List<String> DEFAULT_TYPE_TAGS = Arrays.asList(
-            "@ui", "@api", "@backend", "@frontend", "@integration", "@unit", 
-            "@performance", "@security", "@regression", "@smoke", "@e2e", 
+            "@ui", "@api", "@backend", "@frontend", "@integration", "@unit",
+            "@performance", "@security", "@regression", "@smoke", "@e2e",
             "@functional", "@acceptance", "@system", "@component");
-            
+
     private static final List<String> DEFAULT_STATUS_TAGS = Arrays.asList(
-            "@wip", "@ready", "@review", "@flaky", "@deprecated", "@legacy", 
+            "@wip", "@ready", "@review", "@flaky", "@deprecated", "@legacy",
             "@todo", "@debug", "@inprogress", "@completed", "@blocked");
-            
+
     private static final List<String> DEFAULT_LOW_VALUE_TAGS = Arrays.asList(
             "@test", "@tests", "@feature", "@cucumber", "@scenario", "@gherkin",
-            "@temp", "@temporary", "@pending", "@fixme", "@workaround", 
+            "@temp", "@temporary", "@pending", "@fixme", "@workaround",
             "@ignore", "@skip", "@manual");
-            
+
     // Actual lists that will be used (may be overridden by configuration)
     private List<String> PRIORITY_TAGS = new ArrayList<>(DEFAULT_PRIORITY_TAGS);
     private List<String> TYPE_TAGS = new ArrayList<>(DEFAULT_TYPE_TAGS);
     private List<String> STATUS_TAGS = new ArrayList<>(DEFAULT_STATUS_TAGS);
     private List<String> KNOWN_LOW_VALUE_TAGS = new ArrayList<>(DEFAULT_LOW_VALUE_TAGS);
-    
+
     private Map<String, Integer> tagConcordance;
     private List<Feature> features;
     private com.heymumford.ftoc.config.WarningConfiguration config;
+
+    // Focused analyzer dependencies
+    private TagTypoAnalyzer typoAnalyzer;
+    private LowValueTagAnalyzer lowValueAnalyzer;
+    private TagFrequencyAnalyzer frequencyAnalyzer;
     
     /**
      * Types of tag warnings that can be detected.
@@ -154,37 +159,49 @@ public class TagQualityAnalyzer {
     
     /**
      * Create a new tag quality analyzer with specific configuration.
-     * 
+     *
      * @param tagConcordance Map of tags to their occurrences
      * @param features List of features to analyze
      * @param config The warning configuration to use
      */
-    public TagQualityAnalyzer(Map<String, Integer> tagConcordance, List<Feature> features, 
+    public TagQualityAnalyzer(Map<String, Integer> tagConcordance, List<Feature> features,
                               com.heymumford.ftoc.config.WarningConfiguration config) {
         this.tagConcordance = new HashMap<>(tagConcordance);
         this.features = new ArrayList<>(features);
         this.config = config;
-        
+
         // Apply custom tag lists from configuration if available
         List<String> customPriorityTags = config.getCustomTags("priority");
         if (!customPriorityTags.isEmpty()) {
             this.PRIORITY_TAGS = new ArrayList<>(customPriorityTags);
         }
-        
+
         List<String> customTypeTags = config.getCustomTags("type");
         if (!customTypeTags.isEmpty()) {
             this.TYPE_TAGS = new ArrayList<>(customTypeTags);
         }
-        
+
         List<String> customStatusTags = config.getCustomTags("status");
         if (!customStatusTags.isEmpty()) {
             this.STATUS_TAGS = new ArrayList<>(customStatusTags);
         }
-        
+
         List<String> customLowValueTags = config.getCustomTags("lowValue");
         if (!customLowValueTags.isEmpty()) {
             this.KNOWN_LOW_VALUE_TAGS = new ArrayList<>(customLowValueTags);
         }
+
+        // Initialize focused analyzers
+        initializeAnalyzers();
+    }
+
+    /**
+     * Initialize focused analyzer instances.
+     */
+    private void initializeAnalyzers() {
+        this.typoAnalyzer = new TagTypoAnalyzer(tagConcordance, features, config);
+        this.lowValueAnalyzer = new LowValueTagAnalyzer(tagConcordance, config, KNOWN_LOW_VALUE_TAGS, PRIORITY_TAGS);
+        this.frequencyAnalyzer = new TagFrequencyAnalyzer(tagConcordance, features, config, PRIORITY_TAGS);
     }
     
     /**
@@ -340,612 +357,61 @@ public class TagQualityAnalyzer {
     
     /**
      * Detect tags that are likely to be low-value or problematic.
+     * Delegates to LowValueTagAnalyzer.
      */
     private List<Warning> detectLowValueTags() {
-        List<Warning> warnings = new ArrayList<>();
-        int totalFeatures = features.size();
-        
-        // Get configuration for relevant warning types
-        com.heymumford.ftoc.config.WarningConfiguration.WarningConfig lowValueConfig = 
-                config.getTagQualityWarnings().get(WarningType.LOW_VALUE_TAG.name());
-        com.heymumford.ftoc.config.WarningConfiguration.WarningConfig tooGenericConfig = 
-                config.getTagQualityWarnings().get(WarningType.TOO_GENERIC_TAG.name());
-        com.heymumford.ftoc.config.WarningConfiguration.WarningConfig ambiguousConfig = 
-                config.getTagQualityWarnings().get(WarningType.AMBIGUOUS_TAG.name());
-        
-        // Check for known low-value tags
-        for (Map.Entry<String, Integer> entry : tagConcordance.entrySet()) {
-            String tag = entry.getKey();
-            int count = entry.getValue();
-            
-            // Check against known low-value tag patterns
-            if (checkIfTagIsLowValue(tag) && lowValueConfig.isEnabled()) {
-                List<String> locations = findTagLocations(tag);
-                String locationStr = String.join(", ", locations);
-                
-                List<String> remediation = new ArrayList<>();
-                remediation.add("Replace with more specific, meaningful tags");
-                remediation.add("Consider what information the tag should convey");
-                remediation.add("Tags should help with test selection and documentation");
-                
-                // Add standard alternatives if they exist
-                if (!lowValueConfig.getStandardAlternatives().isEmpty()) {
-                    remediation.add("Consider using standard alternatives: " + 
-                                    String.join(", ", lowValueConfig.getStandardAlternatives()));
-                }
-                
-                warnings.add(new Warning(
-                        WarningType.LOW_VALUE_TAG,
-                        "'" + tag + "' is a known low-value tag that doesn't provide useful context",
-                        locationStr,
-                        remediation,
-                        lowValueConfig.getSeverity(),
-                        lowValueConfig.getStandardAlternatives()
-                ));
-            }
-            
-            // Check for tags used on nearly all features (>90%)
-            if (totalFeatures > 5 && count >= totalFeatures * 0.9 && tooGenericConfig.isEnabled()) {
-                List<String> remediation = Arrays.asList(
-                        "Overly common tags don't help discriminate between tests",
-                        "Consider if this tag is providing useful information",
-                        "If this tag is needed on most features, consider making it a convention rather than a tag"
-                );
-                
-                warnings.add(new Warning(
-                        WarningType.TOO_GENERIC_TAG,
-                        "'" + tag + "' is used on nearly all features, making it too generic to be useful",
-                        "Used in " + count + " out of " + totalFeatures + " features",
-                        remediation,
-                        tooGenericConfig.getSeverity(),
-                        null
-                ));
-            }
-            
-            // Check for ambiguous short tags (1-2 characters)
-            String lowerTag = tag.toLowerCase();
-            if (tag.length() <= 3 && !PRIORITY_TAGS.contains(lowerTag) && ambiguousConfig.isEnabled()) {
-                List<String> locations = findTagLocations(tag);
-                String locationStr = String.join(", ", locations);
-                
-                List<String> remediation = Arrays.asList(
-                        "Use more descriptive tag names",
-                        "Short tags are hard to understand and maintain",
-                        "Consider what information the tag should convey"
-                );
-                
-                warnings.add(new Warning(
-                        WarningType.AMBIGUOUS_TAG,
-                        "'" + tag + "' is too short and ambiguous",
-                        locationStr,
-                        remediation,
-                        ambiguousConfig.getSeverity(),
-                        null
-                ));
-            }
-        }
-        
-        return warnings;
+        return lowValueAnalyzer.detectLowValueTags();
     }
     
     /**
      * Detect tags that are only used once (might be typos or orphaned).
+     * Delegates to TagFrequencyAnalyzer.
      */
     private List<Warning> detectOrphanedTags() {
-        List<Warning> warnings = new ArrayList<>();
-        int totalFeatures = features.size();
-        
-        // Only check for orphaned tags if we have enough features
-        if (totalFeatures <= 2) {
-            return warnings;
-        }
-        
-        for (Map.Entry<String, Integer> entry : tagConcordance.entrySet()) {
-            String tag = entry.getKey();
-            int count = entry.getValue();
-            
-            // Tags used only once might be typos or orphaned
-            if (count == 1) {
-                // Find where this tag is used
-                List<String> locations = findTagLocations(tag);
-                String locationStr = String.join(", ", locations);
-                
-                // Check if this might be a typo of another tag
-                String possibleCorrectTag = findPossibleCorrectTag(tag);
-                List<String> remediation;
-                
-                if (possibleCorrectTag != null) {
-                    remediation = Arrays.asList(
-                            "This might be a typo of '" + possibleCorrectTag + "'",
-                            "Correct the tag if it's a typo",
-                            "If intentional, consider using consistent naming conventions for related tags"
-                    );
-                    
-                    warnings.add(new Warning(
-                            WarningType.TAG_TYPO,
-                            "'" + tag + "' is only used once and might be a typo",
-                            locationStr,
-                            remediation
-                    ));
-                } else {
-                    remediation = Arrays.asList(
-                            "Tags used only once don't help group related scenarios",
-                            "Consider if this tag is valuable or if it should be removed",
-                            "Check if it should be consistent with other similar tags"
-                    );
-                    
-                    warnings.add(new Warning(
-                            WarningType.ORPHANED_TAG,
-                            "'" + tag + "' is only used once across all features",
-                            locationStr,
-                            remediation
-                    ));
-                }
-            }
-        }
-        
-        return warnings;
+        return frequencyAnalyzer.detectOrphanedTags();
     }
     
     /**
      * Detect scenarios with an excessive number of tags.
+     * Delegates to TagFrequencyAnalyzer.
      */
     private List<Warning> detectExcessiveTags() {
-        List<Warning> warnings = new ArrayList<>();
-        
-        // Get the maximum tags threshold from configuration (default: 6)
-        final int MAX_RECOMMENDED_TAGS = config.getIntThreshold("maxTags", 6);
-        
-        for (Feature feature : features) {
-            for (Scenario scenario : feature.getScenarios()) {
-                // Skip backgrounds
-                if (scenario.isBackground()) {
-                    continue;
-                }
-                
-                // Count the total tags (feature + scenario)
-                Set<String> allTags = new HashSet<>(feature.getTags());
-                allTags.addAll(scenario.getTags());
-                
-                if (allTags.size() > MAX_RECOMMENDED_TAGS) {
-                    String location = feature.getFilename() + " - " + scenario.getName();
-                    List<String> remediation = Arrays.asList(
-                            "Having too many tags makes it harder to understand the test's purpose",
-                            "Consider consolidating similar tags",
-                            "Remove redundant tags",
-                            "Ensure tags serve a clear purpose (selection, documentation, or automation)"
-                    );
-                    
-                    warnings.add(new Warning(
-                            WarningType.EXCESSIVE_TAGS,
-                            "Scenario has " + allTags.size() + " tags, which is excessive (recommended max: " + MAX_RECOMMENDED_TAGS + ")",
-                            location,
-                            remediation
-                    ));
-                }
-            }
-        }
-        
-        return warnings;
+        return frequencyAnalyzer.detectExcessiveTags();
     }
     
     /**
      * Detect inconsistent tagging patterns across similar scenarios.
+     * Delegates to TagFrequencyAnalyzer.
      */
     private List<Warning> detectInconsistentTagging() {
-        List<Warning> warnings = new ArrayList<>();
-        
-        // Check for inconsistent priority tag usage
-        Map<Feature, Set<String>> featurePriorityTags = new HashMap<>();
-        
-        // Collect priority tags used in each feature
-        for (Feature feature : features) {
-            Set<String> priorityTags = new HashSet<>();
-            
-            // Check feature-level tags
-            for (String tag : feature.getTags()) {
-                if (PRIORITY_TAGS.contains(tag.toLowerCase())) {
-                    priorityTags.add(tag.toLowerCase());
-                }
-            }
-            
-            // Check scenario-level tags
-            for (Scenario scenario : feature.getScenarios()) {
-                if (scenario.isBackground()) {
-                    continue;
-                }
-                
-                for (String tag : scenario.getTags()) {
-                    if (PRIORITY_TAGS.contains(tag.toLowerCase())) {
-                        priorityTags.add(tag.toLowerCase());
-                    }
-                }
-            }
-            
-            featurePriorityTags.put(feature, priorityTags);
-        }
-        
-        // Check if multiple priority tag styles are used
-        Set<String> allPriorityStyles = new HashSet<>();
-        for (Set<String> tags : featurePriorityTags.values()) {
-            for (String tag : tags) {
-                if (tag.startsWith("@p")) {
-                    allPriorityStyles.add("p-style");
-                } else if (tag.startsWith("@priority")) {
-                    allPriorityStyles.add("priority-style");
-                } else if (tag.startsWith("@critical") || tag.startsWith("@high") || 
-                           tag.startsWith("@medium") || tag.startsWith("@low")) {
-                    allPriorityStyles.add("severity-style");
-                }
-            }
-        }
-        
-        if (allPriorityStyles.size() > 1) {
-            List<String> remediation = Arrays.asList(
-                    "Standardize on a single priority tag style (e.g., @P0-@P3 or @Critical/@High/@Medium/@Low)",
-                    "Consistent tag formatting improves readability and maintainability",
-                    "Document the preferred tag style in a team guideline"
-            );
-            
-            warnings.add(new Warning(
-                    WarningType.INCONSISTENT_TAGGING,
-                    "Multiple priority tag styles used across features (" + String.join(", ", allPriorityStyles) + ")",
-                    "Multiple features",
-                    remediation
-            ));
-        }
-        
-        // Check for inconsistent type tag usage with similar logic
-        // (Implementation similar to priority tag check above)
-        
-        return warnings;
+        return frequencyAnalyzer.detectInconsistentTagging();
     }
     
     /**
      * Detect possible typos in tags by comparing with other similar tags.
+     * Delegates to TagTypoAnalyzer.
      */
     private List<Warning> detectPossibleTagTypos() {
-        List<Warning> warnings = new ArrayList<>();
-        
-        // Get configuration for this warning type
-        com.heymumford.ftoc.config.WarningConfiguration.WarningConfig warningConfig = 
-                config.getTagQualityWarnings().get(WarningType.TAG_TYPO.name());
-        
-        if (!warningConfig.isEnabled()) {
-            return warnings;
-        }
-        
-        // First check for similar tags using normalization (handles case differences and separators)
-        Map<String, String> tagNormalizations = new HashMap<>();
-        List<String> allTags = new ArrayList<>(tagConcordance.keySet());
-        
-        // Normalize tag names for comparison
-        for (String tag : allTags) {
-            String normalized = normalizeTagForComparison(tag);
-            tagNormalizations.put(tag, normalized);
-        }
-        
-        // Find tags with similar normalized forms
-        Map<String, List<String>> similarTags = new HashMap<>();
-        for (String tag : allTags) {
-            String normalized = tagNormalizations.get(tag);
-            similarTags.computeIfAbsent(normalized, k -> new ArrayList<>()).add(tag);
-        }
-        
-        // Report warnings for tags with similar names
-        for (List<String> tagGroup : similarTags.values()) {
-            if (tagGroup.size() > 1) {
-                List<String> locations = new ArrayList<>();
-                for (String tag : tagGroup) {
-                    locations.addAll(findTagLocations(tag));
-                }
-                
-                String locationStr = locations.size() > 3 
-                    ? String.join(", ", locations.subList(0, 3)) + " and " + (locations.size() - 3) + " more"
-                    : String.join(", ", locations);
-                
-                List<String> remediation = Arrays.asList(
-                        "Standardize on a single tag format",
-                        "Update all similar tags to use the same format",
-                        "Consider adding a tag glossary to documentation"
-                );
-                
-                warnings.add(new Warning(
-                        WarningType.TAG_TYPO,
-                        "Similar tags found that might be typos or inconsistencies: " + String.join(", ", tagGroup),
-                        locationStr,
-                        remediation,
-                        warningConfig.getSeverity(),
-                        warningConfig.getStandardAlternatives()
-                ));
-            }
-        }
-        
-        // Second, check for potential typos using edit distance
-        for (String tag1 : allTags) {
-            // Skip tags that have exact normalized matches (already handled above)
-            if (similarTags.get(tagNormalizations.get(tag1)).size() > 1) {
-                continue;
-            }
-            
-            for (String tag2 : allTags) {
-                if (tag1.equals(tag2)) {
-                    continue;
-                }
-                
-                // Check for small edit distance to detect potential typos
-                if (calculateLevenshteinDistance(
-                        normalizeTagForComparison(tag1), 
-                        normalizeTagForComparison(tag2)) <= 1) {
-                    
-                    // Only report as typo if one tag is much less frequent
-                    int count1 = tagConcordance.get(tag1);
-                    int count2 = tagConcordance.get(tag2);
-                    String lessFrequentTag = count1 < count2 ? tag1 : tag2;
-                    String moreFrequentTag = count1 < count2 ? tag2 : tag1;
-                    int ratio = Math.max(count1, count2) / Math.max(1, Math.min(count1, count2));
-                    
-                    if (ratio >= 2) {
-                        List<String> locations = findTagLocations(lessFrequentTag);
-                        String locationStr = String.join(", ", locations);
-                        
-                        List<String> remediation = Arrays.asList(
-                                "This appears to be a typo of '" + moreFrequentTag + "'",
-                                "Correct the tag spelling for consistency",
-                                "Standardize on '" + moreFrequentTag + "' which is more commonly used"
-                        );
-                        
-                        warnings.add(new Warning(
-                                WarningType.TAG_TYPO,
-                                "'" + lessFrequentTag + "' might be a typo of '" + moreFrequentTag + "'",
-                                locationStr,
-                                remediation,
-                                warningConfig.getSeverity(),
-                                warningConfig.getStandardAlternatives()
-                        ));
-                    }
-                }
-            }
-        }
-        
-        // Special check for the @Regressionn tag which is used in tests
-        if (tagConcordance.containsKey("@Regressionn") && tagConcordance.containsKey("@Regression")) {
-            List<String> locations = findTagLocations("@Regressionn");
-            String locationStr = String.join(", ", locations);
-            
-            List<String> remediation = Arrays.asList(
-                    "This appears to be a typo of '@Regression'",
-                    "Correct the tag spelling for consistency",
-                    "Standardize on '@Regression' which is the correct spelling"
-            );
-            
-            warnings.add(new Warning(
-                    WarningType.TAG_TYPO,
-                    "'@Regressionn' is a typo of '@Regression'",
-                    locationStr,
-                    remediation,
-                    warningConfig.getSeverity(),
-                    warningConfig.getStandardAlternatives()
-            ));
-        }
-        
-        return warnings;
+        return typoAnalyzer.detectPossibleTagTypos();
     }
     
     /**
      * Detect duplicate tags on the same scenario.
+     * Delegates to TagFrequencyAnalyzer.
      */
     private List<Warning> detectDuplicateTags() {
-        List<Warning> warnings = new ArrayList<>();
-        
-        for (Feature feature : features) {
-            // Check for duplicates in feature tags
-            Set<String> featureTags = new HashSet<>();
-            List<String> featureDuplicates = new ArrayList<>();
-            
-            for (String tag : feature.getTags()) {
-                String lowerTag = tag.toLowerCase();
-                if (!featureTags.add(lowerTag)) {
-                    featureDuplicates.add(tag);
-                }
-            }
-            
-            if (!featureDuplicates.isEmpty()) {
-                List<String> remediation = Arrays.asList(
-                        "Remove duplicate tags",
-                        "Duplicate tags add noise without value"
-                );
-                
-                warnings.add(new Warning(
-                        WarningType.DUPLICATE_TAG,
-                        "Feature has duplicate tags: " + String.join(", ", featureDuplicates),
-                        feature.getFilename(),
-                        remediation
-                ));
-            }
-            
-            // Check for duplicates in scenario tags and with feature tags
-            for (Scenario scenario : feature.getScenarios()) {
-                if (scenario.isBackground()) {
-                    continue;
-                }
-                
-                Set<String> scenarioTags = new HashSet<>(featureTags);
-                List<String> scenarioDuplicates = new ArrayList<>();
-                
-                for (String tag : scenario.getTags()) {
-                    String lowerTag = tag.toLowerCase();
-                    if (!scenarioTags.add(lowerTag)) {
-                        // Check if this tag is already at the feature level
-                        if (featureTags.contains(lowerTag)) {
-                            scenarioDuplicates.add(tag + " (already on feature)");
-                        } else {
-                            scenarioDuplicates.add(tag);
-                        }
-                    }
-                }
-                
-                if (!scenarioDuplicates.isEmpty()) {
-                    String location = feature.getFilename() + " - " + scenario.getName();
-                    List<String> remediation = Arrays.asList(
-                            "Remove duplicate tags",
-                            "Avoid repeating feature-level tags on scenarios",
-                            "Tags at the feature level apply to all scenarios"
-                    );
-                    
-                    warnings.add(new Warning(
-                            WarningType.DUPLICATE_TAG,
-                            "Scenario has duplicate tags: " + String.join(", ", scenarioDuplicates),
-                            location,
-                            remediation
-                    ));
-                }
-            }
-        }
-        
-        return warnings;
-    }
-    
-    /**
-     * Find all locations where a specific tag is used.
-     * 
-     * @param tag The tag to find
-     * @return List of locations (feature/scenario descriptors)
-     */
-    private List<String> findTagLocations(String tag) {
-        List<String> locations = new ArrayList<>();
-        String lowerTag = tag.toLowerCase();
-        
-        for (Feature feature : features) {
-            boolean featureHasTag = feature.getTags().stream()
-                    .anyMatch(t -> t.equalsIgnoreCase(tag));
-            
-            if (featureHasTag) {
-                locations.add(feature.getFilename());
-            }
-            
-            for (Scenario scenario : feature.getScenarios()) {
-                if (scenario.isBackground()) {
-                    continue;
-                }
-                
-                boolean scenarioHasTag = scenario.getTags().stream()
-                        .anyMatch(t -> t.equalsIgnoreCase(tag));
-                
-                if (scenarioHasTag) {
-                    locations.add(feature.getFilename() + " - " + scenario.getName());
-                }
-            }
-        }
-        
-        return locations;
-    }
-    
-    /**
-     * Find a possible correct tag if this tag might be a typo.
-     * 
-     * @param tag The tag that might be a typo
-     * @return A similar tag that might be the correct version, or null if none found
-     */
-    private String findPossibleCorrectTag(String tag) {
-        String normalizedTag = normalizeTagForComparison(tag);
-        
-        // Find tags with similar names
-        for (String otherTag : tagConcordance.keySet()) {
-            if (otherTag.equals(tag)) {
-                continue;
-            }
-            
-            String normalizedOther = normalizeTagForComparison(otherTag);
-            
-            // Check for small edit distance
-            if (calculateLevenshteinDistance(normalizedTag, normalizedOther) <= 2) {
-                // Return the more common tag as the likely correct one
-                if (tagConcordance.get(otherTag) > tagConcordance.get(tag)) {
-                    return otherTag;
-                }
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Normalize a tag for similarity comparison.
-     * 
-     * @param tag The tag to normalize
-     * @return Normalized tag string
-     */
-    private String normalizeTagForComparison(String tag) {
-        // Remove @ prefix
-        String normalized = tag.startsWith("@") ? tag.substring(1) : tag;
-        
-        // Convert to lowercase
-        normalized = normalized.toLowerCase();
-        
-        // Remove separators and special characters
-        normalized = normalized.replaceAll("[_\\-\\.]", "");
-        
-        return normalized;
+        return frequencyAnalyzer.detectDuplicateTags();
     }
     
     /**
      * Check if a tag is considered a low-value tag.
-     * This is public to allow testing.
-     * 
+     * Public to allow testing - delegates to LowValueTagAnalyzer.
+     *
      * @param tag The tag to check
      * @return true if the tag is a low-value tag, false otherwise
      */
     public boolean checkIfTagIsLowValue(String tag) {
-        // Get properly normalized tag for comparison
-        String normalizedTag = tag.toLowerCase();
-        if (normalizedTag.startsWith("@")) {
-            normalizedTag = normalizedTag.substring(1);
-        }
-        
-        // Check against all known low-value tags, normalizing them for comparison
-        for (String lowValueTag : KNOWN_LOW_VALUE_TAGS) {
-            String normalizedLowValue = lowValueTag.toLowerCase();
-            if (normalizedLowValue.startsWith("@")) {
-                normalizedLowValue = normalizedLowValue.substring(1);
-            }
-            
-            if (normalizedTag.equals(normalizedLowValue)) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Calculate the Levenshtein distance between two strings.
-     * 
-     * @param s1 First string
-     * @param s2 Second string
-     * @return Levenshtein distance (number of edits required to transform s1 into s2)
-     */
-    private int calculateLevenshteinDistance(String s1, String s2) {
-        int[][] dp = new int[s1.length() + 1][s2.length() + 1];
-        
-        for (int i = 0; i <= s1.length(); i++) {
-            dp[i][0] = i;
-        }
-        
-        for (int j = 0; j <= s2.length(); j++) {
-            dp[0][j] = j;
-        }
-        
-        for (int i = 1; i <= s1.length(); i++) {
-            for (int j = 1; j <= s2.length(); j++) {
-                int cost = (s1.charAt(i - 1) == s2.charAt(j - 1)) ? 0 : 1;
-                dp[i][j] = Math.min(dp[i - 1][j] + 1,         // deletion
-                           Math.min(dp[i][j - 1] + 1,          // insertion
-                                   dp[i - 1][j - 1] + cost));  // substitution
-            }
-        }
-        
-        return dp[s1.length()][s2.length()];
+        return lowValueAnalyzer.checkIfTagIsLowValue(tag);
     }
     
     /**
