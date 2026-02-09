@@ -77,30 +77,30 @@ public class ConcordanceFormatterTest {
     public void testGenerateHtmlReport() {
         // Create test features with tags
         List<Feature> features = createTestFeatures();
-        
+
         // Create tag concordance map
         Map<String, Integer> tagConcordance = createTagConcordanceMap();
-        
+
         // Create formatter
         ConcordanceFormatter formatter = new ConcordanceFormatter();
-        
+
         // Generate HTML report
         String report = formatter.generateConcordanceReport(tagConcordance, features, ConcordanceFormatter.Format.HTML);
-        
+
         // Verify results
         assertNotNull(report);
         assertFalse(report.isEmpty());
-        
+
         // Check for expected HTML elements
         assertTrue(report.contains("<!DOCTYPE html>"));
         assertTrue(report.contains("<html>"));
         assertTrue(report.contains("<head>"));
         assertTrue(report.contains("<body>"));
-        
-        // Check for visualization
-        assertTrue(report.contains("d3.js"));
+
+        // Check for D3.js library reference (v7 version)
+        assertTrue(report.contains("d3.v7.min.js"));
         assertTrue(report.contains("visualization"));
-        
+
         // Check for tabbed interface
         assertTrue(report.contains("tab-button"));
         assertTrue(report.contains("tab-content"));

@@ -48,6 +48,8 @@ jobs:
           echo "::error::Found direct System.out.println usage. Please use proper logging instead."
           exit 1
         }
+    - name: Code Style Check (Checkstyle)
+      run: mvn checkstyle:check
 
   build:
     name: Build and Test on ${{ matrix.os }}
