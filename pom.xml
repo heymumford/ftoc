@@ -206,7 +206,7 @@
       <!-- Plugin to copy JUnit XML reports to target directory for CI integration -->
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>3.2.0</version>
         <executions>
           <execution>
             <id>create-junit-report-dir</id>
