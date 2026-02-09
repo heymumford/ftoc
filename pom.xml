@@ -113,13 +113,6 @@
       <version>${junit.jupiter.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- Karate Dependencies for API/CLI testing -->
-    <dependency>
-      <groupId>com.intuit.karate</groupId>
-      <artifactId>karate-junit5</artifactId>
-      <version>1.4.0</version>
-      <scope>test</scope>
-    </dependency>
     <!-- Mockito for mocking in unit tests -->
     <dependency>
       <groupId>org.mockito</groupId>
@@ -191,32 +184,6 @@
             <include>**/*Tests.java</include>
           </includes>
           <skipTests>false</skipTests>
-          <useModulePath>false</useModulePath>
-          <systemProperties>
-            <karate.options>--tags ~@ignore</karate.options>
-          </systemProperties>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>${maven.surefire.plugin.version}</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <skipTests>false</skipTests>
-          <includes>
-            <include>karate/KarateRunner.java</include>
-          </includes>
-          <systemProperties>
-            <karate.env>test</karate.env>
-          </systemProperties>
           <useModulePath>false</useModulePath>
         </configuration>
       </plugin>

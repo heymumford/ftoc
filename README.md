@@ -7,32 +7,23 @@ FTOC solves the challenge of managing large Cucumber test suites by automaticall
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 [![Java Version](https://img.shields.io/badge/java-11+-orange.svg)](https://openjdk.java.net/)
 [![Cucumber](https://img.shields.io/badge/cucumber-compatible-green.svg)](https://cucumber.io/)
-[![Karate](https://img.shields.io/badge/karate-integrated-yellow.svg)](https://github.com/karatelabs/karate)
 [![Coverage](.github/badges/coverage.svg)](.github/badges/jacoco.csv)
 
 ## Overview
 
-`ftoc` analyzes Cucumber feature files to create documentation and perform quality checks, helping development teams maintain consistent BDD practices. It works with all Cucumber-compatible implementations (Java, JavaScript, Ruby, Karate) and provides sophisticated analytics to understand your test suite organization.
+`ftoc` analyzes Cucumber feature files to create documentation and perform quality checks, helping development teams maintain consistent BDD practices. It provides sophisticated analytics to understand your test suite organization.
 
 ## Key Features
 
 - **Table of Contents Generation:** Creates structured TOC of all scenarios and scenario outlines
-- **Advanced Tag Analytics:** 
+- **Advanced Tag Analytics:**
   - Tag occurrence metrics and co-occurrence analysis
   - Trend detection for rising and declining tag usage
   - Statistical significance indicators
   - D3.js visualizations of tag relationships
 - **Quality Assurance:** Flags missing tags or use of low-value generic tags
-- **Cross-Language Support:** Works with feature files in any Cucumber implementation, including Karate
-- **Karate Support:** Specialized analysis of Karate API test files
 - **CI/CD Integration:** Generates JUnit XML reports for integration with CI systems
-- **Test Pyramid Integration:** System testing with Karate for robust CLI validation
 - **Multi-Format Output:** Plain text, Markdown, HTML, and JSON reporting
-- **GitHub Copilot Integration:**
-  - IDE configurations for VS Code and JetBrains
-  - CLI integration with custom aliases and scripts
-  - VS Code extension prototype for enhanced feature file editing
-  - Custom edit modes for common FTOC tasks
 
 ## Who Is This For?
 
@@ -135,15 +126,12 @@ Managing large suites of Cucumber tests presents challenges:
 - [Architecture Decision Records (ADRs)](docs/adr/README.md)
 - [C4 Architecture Diagrams](docs/c4/README.md)
 - [Project Kanban Board](docs/developer/KANBAN.md)
-- [GitHub Copilot Integration](docs/developer/GITHUB_COPILOT.md)
 - [Version Management Guide](docs/developer/VERSION_MANAGEMENT.md)
 - [Classpath Optimization Report](docs/developer/CLASSPATH_OPTIMIZATION.md)
 - [XML Standards and Cleanup](docs/developer/XML_STANDARDS.md)
 - [Security Practices](docs/developer/SECURITY.md)
 - [Code Coverage](docs/developer/CODE_COVERAGE.md)
 - [Claude AI Assistant Guide](docs/developer/CLAUDE.md)
-- [Karate Testing Guide](docs/developer/KARATE_TESTING.md)
-- [Test Pyramid Strategy](docs/developer/TEST_PYRAMID.md)
 - [Conventional Commits Guide](docs/developer/CONVENTIONAL_COMMITS.md)
 - [Release Process](docs/developer/RELEASE_PROCESS.md)
 - [Changelog Usage](docs/developer/CHANGELOG_USAGE.md)
