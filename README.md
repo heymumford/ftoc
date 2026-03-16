@@ -2,12 +2,21 @@
 
 FTOC solves the challenge of managing large Cucumber test suites by automatically analyzing feature files to improve discoverability, ensure tag consistency, and maintain quality. It generates structured documentation, comprehensive tag analysis with visualizations, and quality metrics that help teams effectively organize their BDD tests. With cross-language support and CI/CD integration, FTOC bridges the gap between test authoring and maintainable, discoverable test documentation.
 
-[![Version](https://img.shields.io/badge/version-0.5.4-brightgreen.svg)](https://github.com/heymumford/ftoc/releases/tag/v0.5.4)
+[![Version](https://img.shields.io/badge/version-0.9.1-brightgreen.svg)](https://github.com/heymumford/ftoc/releases/tag/v0.9.1)
 [![Build](https://img.shields.io/badge/build-12-blue.svg)](https://github.com/heymumford/ftoc/actions)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 [![Java Version](https://img.shields.io/badge/java-11+-orange.svg)](https://openjdk.java.net/)
 [![Cucumber](https://img.shields.io/badge/cucumber-compatible-green.svg)](https://cucumber.io/)
 [![Coverage](.github/badges/coverage.svg)](.github/badges/jacoco.csv)
+
+## Quick Start
+
+```bash
+git clone https://github.com/heymumford/ftoc.git
+cd ftoc
+mvn clean package
+java -jar target/ftoc-0.9.1-jar-with-dependencies.jar -d /path/to/features
+```
 
 ## Overview
 
@@ -56,43 +65,42 @@ java -jar target/ftoc-<version>-jar-with-dependencies.jar [OPTIONS]
 
 ```bash
 # Analyze all feature files in a specific directory
-java -jar target/ftoc-0.5.1-jar-with-dependencies.jar -d src/test/resources/features
+java -jar target/ftoc-0.9.1-jar-with-dependencies.jar -d src/test/resources/features
 
 # Get version information
-java -jar target/ftoc-0.5.1-jar-with-dependencies.jar --version
+java -jar target/ftoc-0.9.1-jar-with-dependencies.jar --version
 ```
 
 ## Programmatic Usage
 
-### Legacy API
+### Core API (Recommended)
 
 ```java
-import com.heymumford.ftoc.FtocUtility;
-
-FtocUtility ftoc = new FtocUtility();
-ftoc.initialize();
-ftoc.processDirectory("/path/to/feature/files");
-```
-
-### New Architecture (Recommended)
-
-```java
-import com.heymumford.ftoc.FtocUtilityRefactored;
+import com.heymumford.ftoc.core.FeatureRepository;
+import com.heymumford.ftoc.core.FeatureProcessor;
+import com.heymumford.ftoc.core.Reporter;
 import com.heymumford.ftoc.core.impl.DefaultFeatureRepository;
 import com.heymumford.ftoc.core.impl.DefaultFeatureProcessor;
 import com.heymumford.ftoc.core.impl.DefaultReporter;
 
-// Using default implementation
-FtocUtilityRefactored ftoc = new FtocUtilityRefactored();
-ftoc.initialize();
-ftoc.processDirectory("/path/to/feature/files");
-
-// Or with custom components
+// Wire up the core components
 FeatureRepository repository = new DefaultFeatureRepository();
 FeatureProcessor processor = new DefaultFeatureProcessor(repository);
 Reporter reporter = new DefaultReporter();
 
-FtocUtilityRefactored ftoc = new FtocUtilityRefactored(repository, processor, reporter);
+// Use them directly
+List<Feature> features = repository.loadFeatures(Path.of("/path/to/feature/files"));
+Map<String, Integer> concordance = processor.generateTagConcordance(features);
+reporter.generateTableOfContents(features, Reporter.Format.MARKDOWN, List.of(), List.of());
+```
+
+### Legacy API (Deprecated)
+
+```java
+import com.heymumford.ftoc.FtocUtility;
+
+// FtocUtility is deprecated and will be removed in a future release.
+FtocUtility ftoc = new FtocUtility();
 ftoc.initialize();
 ftoc.processDirectory("/path/to/feature/files");
 ```
