@@ -15,7 +15,7 @@ COPY config ./config
 RUN mvn package
 
 # Second stage: minimal runtime image
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:11-jre-alpine
 
 # Create a non-root user to run the application
 RUN groupadd -r ftoc && useradd -r -g ftoc ftoc
