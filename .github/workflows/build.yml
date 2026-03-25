@@ -25,7 +25,7 @@ jobs:
     - name: Extract version for tagging
       id: get-version
       run: |
-        VERSION=$(xmlstarlet sel -N pom="http://maven.apache.org/POM/4.0.0" -t -v "/pom:project/pom:version" pom.xml)
+        VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         
