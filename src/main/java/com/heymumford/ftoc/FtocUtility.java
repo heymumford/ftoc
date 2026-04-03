@@ -443,7 +443,39 @@ public class FtocUtility {
             System.out.println("FTOC Utility version " + VERSION);
             return;
         }
-        
+
+        // Validate flags before processing
+        Set<String> knownFlags = new HashSet<>(Arrays.asList(
+                "-d", "-f", "-v",
+                "--format", "--concordance", "--concordance-format",
+                "--analyze-tags", "--tag-quality-format",
+                "--detect-anti-patterns", "--anti-pattern-format",
+                "--tags", "--exclude-tags",
+                "--config-file", "--show-config",
+                "--junit-report", "--performance", "--benchmark",
+                "--small", "--medium", "--large", "--very-large", "--all",
+                "--report", "--no-cleanup",
+                "--version", "--help"
+        ));
+
+        Set<String> flagsWithValue = new HashSet<>(Arrays.asList(
+                "-d", "-f", "--format", "--concordance-format",
+                "--tag-quality-format", "--anti-pattern-format",
+                "--tags", "--exclude-tags", "--config-file", "--report"
+        ));
+
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i];
+            if (arg.startsWith("-") && !knownFlags.contains(arg)) {
+                System.err.println("Unknown option: " + arg);
+                printHelp();
+                return;
+            }
+            if (flagsWithValue.contains(arg)) {
+                i++; // skip the value argument
+            }
+        }
+
         // Process config file early if specified, so it can be used with --show-config
         FtocUtility ftoc = new FtocUtility();
         ftoc.initialize();
