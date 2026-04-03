@@ -1,8 +1,8 @@
 # FTOC Core Architecture
 
-This directory contains the core interfaces for the FTOC utility's refactored architecture, which focuses on proper separation of concerns.
+This directory contains the core classes for the FTOC utility, which focus on proper separation of concerns.
 
-## Core Interfaces
+## Core Classes
 
 ### `FeatureRepository`
 
@@ -27,39 +27,3 @@ Responsible for generating various reports:
 - `generateTagQualityReport(List<Feature> features, Map<String, Integer> tagConcordance, Format format)`: Generate tag quality report
 - `generateAntiPatternReport(List<Feature> features, Format format)`: Generate anti-pattern report
 - `setOutputHandler(Consumer<String> outputHandler)`: Configure output handler
-
-## Default Implementations
-
-The `impl` directory contains default implementations of the core interfaces:
-
-### `DefaultFeatureRepository`
-
-Default implementation of `FeatureRepository` that handles file system operations and delegates to the appropriate parser based on file content.
-
-### `DefaultFeatureProcessor`
-
-Default implementation of `FeatureProcessor` that handles feature processing and tag concordance generation.
-
-### `DefaultReporter`
-
-Default implementation of `Reporter` that delegates to specialized formatters for each report type and supports various output formats.
-
-## Usage
-
-The new architecture can be used through the `FtocUtilityRefactored` class, which provides a convenient API that is similar to the original `FtocUtility` class:
-
-```java
-// Using default implementation
-FtocUtilityRefactored ftoc = new FtocUtilityRefactored();
-ftoc.initialize();
-ftoc.processDirectory("/path/to/features");
-
-// Or with custom components
-FeatureRepository repository = new CustomFeatureRepository();
-FeatureProcessor processor = new CustomFeatureProcessor(repository);
-Reporter reporter = new CustomReporter();
-
-FtocUtilityRefactored ftoc = new FtocUtilityRefactored(repository, processor, reporter);
-ftoc.initialize();
-ftoc.processDirectory("/path/to/features");
-```
