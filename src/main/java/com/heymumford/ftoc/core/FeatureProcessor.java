@@ -30,19 +30,10 @@ public interface FeatureProcessor {
     List<Feature> filterFeaturesByTags(List<Feature> features, List<String> includeTags, List<String> excludeTags);
     
     /**
-     * Process features with parallel execution if appropriate.
+     * Process feature files sequentially.
      * 
      * @param features List of feature files to process
-     * @param useParallel Whether to use parallel processing
      * @return List of processed features
      */
-    List<Feature> processFeatures(List<Path> features, boolean useParallel);
-    
-    /**
-     * Check if parallel processing should be used based on number of features.
-     * 
-     * @param featureCount Number of features to process
-     * @return true if parallel processing should be used
-     */
-    boolean shouldUseParallelProcessing(int featureCount);
+    List<Feature> processFeatures(List<Path> features);
 }

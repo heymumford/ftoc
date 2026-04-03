@@ -50,7 +50,6 @@ public class FtocUtility extends AbstractFtocUtility {
     private final List<String> excludeTagFilters;
     private boolean analyzeTagQuality;
     private boolean detectAntiPatterns;
-    private boolean enablePerformanceMonitoring;
     private com.heymumford.ftoc.config.WarningConfiguration warningConfig;
 
     public FtocUtility() {
@@ -70,7 +69,6 @@ public class FtocUtility extends AbstractFtocUtility {
         this.excludeTagFilters = new ArrayList<>();
         this.analyzeTagQuality = false;
         this.detectAntiPatterns = false;
-        this.enablePerformanceMonitoring = false;
         this.warningConfig = new com.heymumford.ftoc.config.WarningConfiguration();
     }
 
@@ -102,16 +100,6 @@ public class FtocUtility extends AbstractFtocUtility {
     public void setDetectAntiPatterns(boolean detect) {
         this.detectAntiPatterns = detect;
         logger.debug("Anti-pattern detection set to: {}", detect);
-    }
-    
-    /**
-     * Enable or disable performance monitoring.
-     * 
-     * @param enable Whether to enable performance monitoring
-     */
-    public void setPerformanceMonitoring(boolean enable) {
-        this.enablePerformanceMonitoring = enable;
-        logger.debug("Performance monitoring set to: {}", enable);
     }
     
     public void setAntiPatternFormat(AntiPatternFormatter.Format format) {
@@ -215,46 +203,8 @@ public class FtocUtility extends AbstractFtocUtility {
 
             featureFiles.addAll(foundFeatureFiles);
             
-            // Enable performance monitoring if requested
-            if (enablePerformanceMonitoring) {
-                com.heymumford.ftoc.performance.PerformanceMonitor.setEnabled(true);
-                com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("total");
-            }
-            
-            boolean useParallel = com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled();
-            
-            if (useParallel && featureFiles.size() > 5) {
-                // Use parallel processing for larger repositories
-                logger.info("Using parallel processing for {} feature files", featureFiles.size());
-                com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("parallel_processing");
-                
-                try {
-                    com.heymumford.ftoc.performance.ParallelFeatureProcessor processor = 
-                            new com.heymumford.ftoc.performance.ParallelFeatureProcessor();
-                    
-                    // Process files in parallel and get results
-                    parsedFeatures.addAll(processor.processFeatureFiles(
-                            featureFiles, 
-                            progress -> logger.debug("Processing progress: {}%", progress)));
-                    
-                    // Shutdown the processor
-                    processor.shutdown();
-                    
-                    // Update tag concordance from all parsed features
-                    for (Feature feature : parsedFeatures) {
-                        updateTagConcordanceFromFeature(feature);
-                    }
-                } catch (Exception e) {
-                    logger.error("Error during parallel processing: {}", e.getMessage());
-                    logger.info("Falling back to sequential processing");
-                    // Clear and fallback to sequential processing
-                    parsedFeatures.clear();
-                    processFeatureFilesSequentially();
-                }
-            } else {
-                // Use sequential processing for smaller repositories
-                processFeatureFilesSequentially();
-            }
+            // Process feature files sequentially
+            processFeatureFiles();
             
             // Generate reports
             generateConcordanceReport();
@@ -274,17 +224,6 @@ public class FtocUtility extends AbstractFtocUtility {
                 generateTableOfContents();
             }
             
-            // Report performance metrics if enabled
-            if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-                com.heymumford.ftoc.performance.PerformanceMonitor.recordFinalMemory();
-                long totalDuration = com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("total");
-                logger.info("Total execution time: {} ms", totalDuration);
-                
-                String performanceSummary = com.heymumford.ftoc.performance.PerformanceMonitor.getSummary();
-                logger.info("Performance Summary:\n{}", performanceSummary);
-                System.out.println("\nPerformance Summary:\n" + performanceSummary);
-            }
-            
             logger.info("FTOC utility finished successfully.");
         } catch (IOException e) {
             logger.error("Error while running FTOC utility: {}", e.getMessage());
@@ -292,47 +231,22 @@ public class FtocUtility extends AbstractFtocUtility {
     }
 
     /**
-     * Process feature files sequentially (non-parallel version).
-     * This method is used for small file sets or as a fallback if parallel processing fails.
+     * Process feature files sequentially.
      */
-    private void processFeatureFilesSequentially() {
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("sequential_processing");
-        }
+    private void processFeatureFiles() {
+        logger.info("Processing {} feature files", featureFiles.size());
         
-        logger.info("Processing {} feature files sequentially", featureFiles.size());
-        
-        // Parse all feature files
-        int processedCount = 0;
         for (File file : featureFiles) {
             try {
-                // Use FeatureParserFactory to get the appropriate parser
-                if (parser == null) {
-                    logger.debug("Initializing feature parser");
-                }
                 FeatureParser fileParser = FeatureParserFactory.getParser(file);
                 Feature feature = fileParser.parseFeatureFile(file);
                 parsedFeatures.add(feature);
                 
                 // Update tag concordance from parsed feature
                 updateTagConcordanceFromFeature(feature);
-                
-                // Log progress for larger file sets
-                processedCount++;
-                if (featureFiles.size() > 20 && processedCount % 10 == 0) {
-                    logger.debug("Processed {}/{} files ({}%)", 
-                            processedCount, featureFiles.size(), 
-                            (int)((processedCount / (double)featureFiles.size()) * 100));
-                }
-                
             } catch (Exception e) {
                 logger.error("Error processing file {}: {}", file.getName(), e.getMessage());
             }
-        }
-        
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            long duration = com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("sequential_processing");
-            logger.info("Sequential processing completed in {} ms", duration);
         }
     }
 
@@ -365,10 +279,6 @@ public class FtocUtility extends AbstractFtocUtility {
     private void generateConcordanceReport() {
         logger.info("Generating tag concordance report...");
         
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("generate_concordance");
-        }
-        
         // Log basic stats to the logger (for backward compatibility)
         tagConcordance.forEach((tag, count) -> logger.info("Tag: {}, Count: {}", tag, count));
         
@@ -380,18 +290,11 @@ public class FtocUtility extends AbstractFtocUtility {
         System.out.println("\n" + report);
         
         logger.info("Concordance report generated successfully.");
-        
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("generate_concordance");
-        }
+
     }
     
     private void generateTagQualityReport() {
         logger.info("Generating tag quality analysis report...");
-        
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("generate_tag_quality");
-        }
         
         if (parsedFeatures.isEmpty()) {
             logger.warn("No features to analyze for tag quality.");
@@ -415,18 +318,11 @@ public class FtocUtility extends AbstractFtocUtility {
         if (warningConfig.getConfigPath() != null) {
             logger.debug("Using warning configuration from: {}", warningConfig.getConfigPath());
         }
-        
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("generate_tag_quality");
-        }
+
     }
     
     private void generateAntiPatternReport() {
         logger.info("Generating feature anti-pattern report...");
-        
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("generate_anti_pattern");
-        }
         
         if (parsedFeatures.isEmpty()) {
             logger.warn("No features to analyze for anti-patterns.");
@@ -450,10 +346,7 @@ public class FtocUtility extends AbstractFtocUtility {
         if (warningConfig.getConfigPath() != null) {
             logger.debug("Using warning configuration from: {}", warningConfig.getConfigPath());
         }
-        
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("generate_anti_pattern");
-        }
+
     }
     
     private void generateTableOfContents() {
@@ -463,10 +356,6 @@ public class FtocUtility extends AbstractFtocUtility {
         }
         
         logger.info("Generating table of contents...");
-        
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("generate_toc");
-        }
         
         // Apply tag filters if they are set
         String toc;
@@ -480,10 +369,7 @@ public class FtocUtility extends AbstractFtocUtility {
         
         System.out.println("\n" + toc);
         logger.info("Table of contents generated successfully.");
-        
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("generate_toc");
-        }
+
     }
 
 
@@ -495,12 +381,6 @@ public class FtocUtility extends AbstractFtocUtility {
 
         if (Arrays.asList(args).contains("--version") || Arrays.asList(args).contains("-v")) {
             System.out.println("FTOC Utility version " + VERSION);
-            return;
-        }
-        
-        // Check for benchmark command
-        if (Arrays.asList(args).contains("--benchmark")) {
-            runBenchmark(args);
             return;
         }
         
@@ -530,7 +410,6 @@ public class FtocUtility extends AbstractFtocUtility {
         boolean generateConcordanceOnly = false;
         boolean analyzeTagQuality = false;
         boolean detectAntiPatterns = false;
-        boolean enablePerformance = false;
         
         for (int i = 0; i < args.length; i++) {
             if ("-d".equals(args[i]) && i + 1 < args.length) {
@@ -628,8 +507,6 @@ public class FtocUtility extends AbstractFtocUtility {
                 concordanceFormat = ConcordanceFormatter.Format.JUNIT_XML;
                 tagQualityFormat = TagQualityFormatter.Format.JUNIT_XML;
                 antiPatternFormat = AntiPatternFormatter.Format.JUNIT_XML;
-            } else if ("--performance".equals(args[i])) {
-                enablePerformance = true;
             }
         }
         
@@ -639,41 +516,9 @@ public class FtocUtility extends AbstractFtocUtility {
         ftoc.setAntiPatternFormat(antiPatternFormat);
         ftoc.setAnalyzeTagQuality(analyzeTagQuality);
         ftoc.setDetectAntiPatterns(detectAntiPatterns);
-        ftoc.setPerformanceMonitoring(enablePerformance);
         
         // Process the directory and generate concordance data
         ftoc.processDirectory(directoryPath, generateConcordanceOnly);
     }
-    
-    /**
-     * Run benchmark tests.
-     * 
-     * @param args Command line arguments for benchmarking
-     */
-    private static void runBenchmark(String[] args) {
-        System.out.println("Running FTOC performance benchmarks...");
-        
-        // Delegate to the BenchmarkRunner main method
-        try {
-            Class<?> benchmarkClass = Class.forName("com.heymumford.ftoc.benchmark.BenchmarkRunner");
-            java.lang.reflect.Method mainMethod = benchmarkClass.getMethod("main", String[].class);
-            
-            // Filter out the --benchmark arg
-            String[] benchmarkArgs = Arrays.stream(args)
-                .filter(arg -> !"--benchmark".equals(arg))
-                .toArray(String[]::new);
-            
-            // Invoke the benchmark runner
-            mainMethod.invoke(null, (Object) benchmarkArgs);
-            
-        } catch (ClassNotFoundException e) {
-            System.err.println("Error: Benchmark classes not available in this build.");
-            System.err.println("This feature may only be available in development builds.");
-        } catch (NoSuchMethodException | IllegalAccessException e) {
-            System.err.println("Error accessing benchmark functionality: " + e.getMessage());
-        } catch (java.lang.reflect.InvocationTargetException e) {
-            System.err.println("Error during benchmark execution: " + e.getCause().getMessage());
-            e.getCause().printStackTrace();
-        }
-    }
+
 }

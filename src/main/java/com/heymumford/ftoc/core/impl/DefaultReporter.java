@@ -70,10 +70,6 @@ public class DefaultReporter implements Reporter {
             return "No features to include in table of contents.";
         }
         
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("generate_toc");
-        }
-        
         // Convert the format enum
         TocFormatter.Format tocFormat = convertFormat(format);
         
@@ -86,10 +82,7 @@ public class DefaultReporter implements Reporter {
         } else {
             toc = tocFormatter.generateToc(features, tocFormat);
         }
-        
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("generate_toc");
-        }
+
         
         logger.info("Table of contents generated successfully.");
         
@@ -117,20 +110,13 @@ public class DefaultReporter implements Reporter {
             return "No tags to include in concordance report.";
         }
         
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("generate_concordance");
-        }
-        
         // Convert the format enum
         ConcordanceFormatter.Format concordanceFormat = convertConcordanceFormat(format);
         
         // Generate detailed report using the formatter
         String report = concordanceFormatter.generateConcordanceReport(
                 tagConcordance, features, concordanceFormat);
-        
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("generate_concordance");
-        }
+
         
         logger.info("Concordance report generated successfully.");
         
@@ -159,10 +145,6 @@ public class DefaultReporter implements Reporter {
             return "No features to analyze for tag quality.";
         }
         
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("generate_tag_quality");
-        }
-        
         // Convert the format enum
         TagQualityFormatter.Format tagQualityFormat = convertTagQualityFormat(format);
         
@@ -174,10 +156,7 @@ public class DefaultReporter implements Reporter {
         
         // Generate a report using the formatter
         String report = tagQualityFormatter.generateTagQualityReport(warnings, tagQualityFormat);
-        
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("generate_tag_quality");
-        }
+
         
         logger.info("Tag quality analysis found {} potential issues.", warnings.size());
         
@@ -203,10 +182,6 @@ public class DefaultReporter implements Reporter {
             return "No features to analyze for anti-patterns.";
         }
         
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("generate_anti_pattern");
-        }
-        
         // Convert the format enum
         AntiPatternFormatter.Format antiPatternFormat = convertAntiPatternFormat(format);
         
@@ -218,10 +193,7 @@ public class DefaultReporter implements Reporter {
         
         // Generate a report using the formatter
         String report = antiPatternFormatter.generateAntiPatternReport(warnings, antiPatternFormat);
-        
-        if (com.heymumford.ftoc.performance.PerformanceMonitor.isEnabled()) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("generate_anti_pattern");
-        }
+
         
         logger.info("Anti-pattern analysis found {} potential issues.", warnings.size());
         

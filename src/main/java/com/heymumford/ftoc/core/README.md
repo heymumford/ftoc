@@ -17,8 +17,7 @@ Responsible for finding and loading feature files:
 Responsible for processing and analyzing features:
 - `generateTagConcordance(List<Feature> features)`: Generate tag concordance information
 - `filterFeaturesByTags(List<Feature> features, List<String> includeTags, List<String> excludeTags)`: Filter features by tags
-- `processFeatures(List<Path> features, boolean useParallel)`: Process features with optional parallel execution
-- `shouldUseParallelProcessing(int featureCount)`: Determine if parallel processing should be used
+- `processFeatures(List<Path> features)`: Process feature files sequentially
 
 ### `Reporter`
 
@@ -39,7 +38,7 @@ Default implementation of `FeatureRepository` that handles file system operation
 
 ### `DefaultFeatureProcessor`
 
-Default implementation of `FeatureProcessor` that handles feature processing, tag concordance generation, and performance optimizations through parallel processing.
+Default implementation of `FeatureProcessor` that handles feature processing and tag concordance generation.
 
 ### `DefaultReporter`
 

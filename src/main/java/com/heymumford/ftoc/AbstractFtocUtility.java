@@ -57,7 +57,7 @@ public abstract class AbstractFtocUtility {
      */
     protected static void printHelp() {
         System.out.println("FTOC Utility version " + VERSION);
-        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--analyze-tags] [--detect-anti-patterns] [--format <format>] [--config-file <file>] [--show-config] [--junit-report] [--performance] [--benchmark] [--version | -v] [--help]");
+        System.out.println("Usage: ftoc [-d <directory>] [-f <format>] [--tags <tags>] [--exclude-tags <tags>] [--concordance] [--analyze-tags] [--detect-anti-patterns] [--format <format>] [--config-file <file>] [--show-config] [--junit-report] [--version | -v] [--help]");
         System.out.println("Options:");
         System.out.println("  -d <directory>      Specify the directory to analyze (default: current directory)");
         System.out.println("  -f <format>         Specify output format (text, md, html, json, junit) (default: text)");
@@ -107,7 +107,7 @@ public abstract class AbstractFtocUtility {
     protected void initialize() {
         logger.info("FTOC utility version {} initialized.", VERSION);
 
-        // Add JVM info for performance monitoring
+        // Add JVM info for diagnostics
         Runtime runtime = Runtime.getRuntime();
         logger.debug("JVM information - Max Memory: {} MB, Available Processors: {}",
                 runtime.maxMemory() / (1024 * 1024),
