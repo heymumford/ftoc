@@ -22,11 +22,6 @@ public enum ErrorCode {
     INVALID_GHERKIN("3001", "Invalid Gherkin syntax"),
     UNSUPPORTED_FORMAT("3002", "Unsupported file format"),
     
-    // Plugin errors (4000-4999)
-    PLUGIN_INITIALIZATION_ERROR("4000", "Error initializing plugin"),
-    PLUGIN_EXECUTION_ERROR("4001", "Error during plugin execution"),
-    PLUGIN_NOT_FOUND("4002", "Plugin not found"),
-    
     // Analysis errors (5000-5999)
     ANALYSIS_ERROR("5000", "Error during feature analysis"),
     TAG_ANALYSIS_ERROR("5001", "Error analyzing tags"),

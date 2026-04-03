@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  * Main utility class for ftoc - Feature Table of Contents Utility.
  *
  * @deprecated This class is deprecated in favor of {@link FtocUtilityRefactored}
- *             which uses proper dependency injection and the plugin system.
+ *             which uses proper dependency injection.
  *             This class will be removed in version 2.0.0.
  *             Maintained for backward compatibility only.
  */
