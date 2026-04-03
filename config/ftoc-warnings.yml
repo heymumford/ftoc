@@ -1,126 +1,62 @@
 # FTOC Warning Configuration
 # -----------------------
-# This file configures the warning system for FTOC utility.
-# You can enable/disable specific warnings and customize tags and thresholds.
+# Warnings default to enabled with severity "warning".
+# Only list what differs from defaults.
 
-# Warnings configuration
 warnings:
-  # Disable specific warnings across all types
+  # Disable specific warnings by name (no category needed)
   disabled:
     # - MISSING_PRIORITY_TAG  # Uncomment to disable specific warnings
     # - LONG_SCENARIO
-  
-  # Tag quality warnings configuration
-  tagQuality:
+
+  # Override severity for individual warnings (default: warning)
+  severity:
+    # Tag quality
+    MISSING_PRIORITY_TAG: error
+    MISSING_TYPE_TAG: warning
+    LOW_VALUE_TAG: info
+    ORPHANED_TAG: info
+    DUPLICATE_TAG: error
+    LONG_SCENARIO_NAME: info
+    LONG_STEP_TEXT: info
+    TOO_GENERIC_TAG: info
+    # Anti-patterns
+    MISSING_GIVEN: error
+    MISSING_WHEN: error
+    MISSING_THEN: error
+    MISSING_EXAMPLES: error
+    INCORRECT_STEP_ORDER: error
+
+  # Standard alternatives for tag-related warnings
+  standardAlternatives:
     MISSING_PRIORITY_TAG:
-      enabled: true
-      severity: error
-      standardAlternatives:
-        - "@P0"
-        - "@P1"
-        - "@P2"
-        - "@P3"
-        - "@Critical"
-        - "@High"
-        - "@Medium"
-        - "@Low"
+      - "@P0"
+      - "@P1"
+      - "@P2"
+      - "@P3"
+      - "@Critical"
+      - "@High"
+      - "@Medium"
+      - "@Low"
     MISSING_TYPE_TAG:
-      enabled: true
-      severity: warning
-      standardAlternatives:
-        - "@UI"
-        - "@API"
-        - "@Backend"
-        - "@Frontend"
-        - "@Integration"
-        - "@Unit"
-        - "@Performance"
-        - "@Security"
+      - "@UI"
+      - "@API"
+      - "@Backend"
+      - "@Frontend"
+      - "@Integration"
+      - "@Unit"
+      - "@Performance"
+      - "@Security"
     LOW_VALUE_TAG:
-      enabled: true
-      severity: info
-      standardAlternatives:
-        - "@Feature"
-        - "@Scenario"
-        - "@Test"
-        - "@Temp"
-    INCONSISTENT_TAGGING:
-      enabled: true
-      severity: warning
-    EXCESSIVE_TAGS:
-      enabled: true
-      severity: warning
-    TAG_TYPO:
-      enabled: true
-      severity: warning
-    ORPHANED_TAG:
-      enabled: true
-      severity: info
+      - "@Feature"
+      - "@Scenario"
+      - "@Test"
+      - "@Temp"
     AMBIGUOUS_TAG:
-      enabled: true
-      severity: warning
-      standardAlternatives:
-        - "@UI" 
-        - "@API"
-        - "@P0"
-        - "@P1"
-    TOO_GENERIC_TAG:
-      enabled: true
-      severity: info
-    INCONSISTENT_NESTING:
-      enabled: true
-      severity: warning
-    DUPLICATE_TAG:
-      enabled: true
-      severity: error
-  
-  # Anti-pattern warnings configuration
-  antiPatterns:
-    LONG_SCENARIO:
-      enabled: true
-      severity: warning
-    TOO_FEW_STEPS:
-      enabled: true
-      severity: warning
-    MISSING_GIVEN:
-      enabled: true
-      severity: error
-    MISSING_WHEN:
-      enabled: true
-      severity: error
-    MISSING_THEN:
-      enabled: true
-      severity: error
-    UI_FOCUSED_STEP:
-      enabled: true
-      severity: warning
-    IMPLEMENTATION_DETAIL:
-      enabled: true
-      severity: warning
-    MISSING_EXAMPLES:
-      enabled: true
-      severity: error
-    TOO_FEW_EXAMPLES:
-      enabled: true
-      severity: warning
-    LONG_SCENARIO_NAME:
-      enabled: true
-      severity: info
-    LONG_STEP_TEXT:
-      enabled: true
-      severity: info
-    INCORRECT_STEP_ORDER:
-      enabled: true
-      severity: error
-    AMBIGUOUS_PRONOUN:
-      enabled: true
-      severity: warning
-    INCONSISTENT_TENSE:
-      enabled: true
-      severity: warning
-    CONJUNCTION_IN_STEP:
-      enabled: true
-      severity: warning
+      - "@UI"
+      - "@API"
+      - "@P0"
+      - "@P1"
 
 # Custom tag definitions
 tags:
@@ -133,7 +69,7 @@ tags:
     - "@High"
     - "@Medium"
     - "@Low"
-  
+
   type:
     - "@UI"
     - "@API"
@@ -150,7 +86,7 @@ tags:
     - "@Acceptance"
     - "@System"
     - "@Component"
-  
+
   status:
     - "@WIP"
     - "@Ready"
@@ -163,7 +99,7 @@ tags:
     - "@InProgress"
     - "@Completed"
     - "@Blocked"
-  
+
   lowValue:
     - "@Test"
     - "@Tests"
@@ -182,9 +118,9 @@ tags:
 
 # Threshold configurations
 thresholds:
-  maxSteps: 10                   # Maximum number of steps in a scenario
-  minSteps: 2                    # Minimum number of steps in a scenario
-  minExamples: 2                 # Minimum number of examples in a scenario outline
-  maxTags: 6                     # Maximum number of tags on a feature/scenario
-  maxScenarioNameLength: 100     # Maximum length of a scenario name
-  maxStepLength: 120             # Maximum length of a step
+  maxSteps: 10
+  minSteps: 2
+  minExamples: 2
+  maxTags: 6
+  maxScenarioNameLength: 100
+  maxStepLength: 120

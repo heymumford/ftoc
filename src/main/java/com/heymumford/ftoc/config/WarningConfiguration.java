@@ -211,18 +211,20 @@ public class WarningConfiguration {
     
     /**
      * Process the warnings section of the configuration file.
+     * Supports both the simplified flat format (severity/standardAlternatives maps)
+     * and the legacy nested format (tagQuality/antiPatterns sub-sections).
      *
      * @param warningsSection The warnings section from the YAML file
      */
+    @SuppressWarnings("unchecked")
     private void processWarningsSection(Map<String, Object> warningsSection) {
-        // Process disabled warnings list
+        // Process disabled warnings list (shared by both formats)
         if (warningsSection.containsKey("disabled")) {
-            List<String> disabled = (List<String>) warningsSection.get("disabled");
+            List<String> disabled =
+                    (List<String>) warningsSection.get("disabled");
             if (disabled != null) {
                 for (String warning : disabled) {
                     disabledWarnings.add(warning);
-                    
-                    // Update the enabled status in the appropriate map
                     if (tagQualityWarnings.containsKey(warning)) {
                         tagQualityWarnings.get(warning).setEnabled(false);
                     } else if (antiPatternWarnings.containsKey(warning)) {
@@ -231,56 +233,98 @@ public class WarningConfiguration {
                 }
             }
         }
-        
-        // Process tag quality warnings
-        if (warningsSection.containsKey("tagQuality")) {
-            Map<String, Object> tagQualitySection = (Map<String, Object>) warningsSection.get("tagQuality");
-            for (Map.Entry<String, Object> entry : tagQualitySection.entrySet()) {
-                String warningName = entry.getKey();
-                if (entry.getValue() instanceof Boolean) {
-                    boolean enabled = (Boolean) entry.getValue();
-                    if (tagQualityWarnings.containsKey(warningName)) {
-                        tagQualityWarnings.get(warningName).setEnabled(enabled);
+
+        // Flat format: severity map (WARNING_NAME -> severity string)
+        if (warningsSection.containsKey("severity")) {
+            Map<String, Object> severityMap =
+                    (Map<String, Object>) warningsSection.get("severity");
+            if (severityMap != null) {
+                for (Map.Entry<String, Object> entry
+                        : severityMap.entrySet()) {
+                    WarningConfig cfg =
+                            findWarningConfig(entry.getKey());
+                    if (cfg != null) {
+                        cfg.setSeverity(
+                                String.valueOf(entry.getValue()));
                     }
-                } else if (entry.getValue() instanceof Map) {
-                    Map<String, Object> warningConfig = (Map<String, Object>) entry.getValue();
-                    boolean enabled = warningConfig.containsKey("enabled") ? (Boolean) warningConfig.get("enabled") : true;
-                    if (tagQualityWarnings.containsKey(warningName)) {
-                        tagQualityWarnings.get(warningName).setEnabled(enabled);
-                        
-                        if (warningConfig.containsKey("severity")) {
-                            tagQualityWarnings.get(warningName).setSeverity((String) warningConfig.get("severity"));
-                        }
-                        
-                        if (warningConfig.containsKey("standardAlternatives")) {
-                            List<String> alternatives = (List<String>) warningConfig.get("standardAlternatives");
-                            if (alternatives != null) {
-                                tagQualityWarnings.get(warningName).setStandardAlternatives(alternatives);
-                            }
+                }
+            }
+        }
+
+        // Flat format: standardAlternatives (WARNING_NAME -> list)
+        if (warningsSection.containsKey("standardAlternatives")) {
+            Map<String, Object> altMap = (Map<String, Object>)
+                    warningsSection.get("standardAlternatives");
+            if (altMap != null) {
+                for (Map.Entry<String, Object> entry
+                        : altMap.entrySet()) {
+                    if (entry.getValue() instanceof List) {
+                        WarningConfig cfg =
+                                findWarningConfig(entry.getKey());
+                        if (cfg != null) {
+                            cfg.setStandardAlternatives(
+                                    (List<String>) entry.getValue());
                         }
                     }
                 }
             }
         }
-        
-        // Process anti-pattern warnings
+
+        // Legacy format: nested tagQuality section
+        if (warningsSection.containsKey("tagQuality")) {
+            processLegacyWarningCategory(
+                    (Map<String, Object>) warningsSection
+                            .get("tagQuality"),
+                    tagQualityWarnings);
+        }
+
+        // Legacy format: nested antiPatterns section
         if (warningsSection.containsKey("antiPatterns")) {
-            Map<String, Object> antiPatternSection = (Map<String, Object>) warningsSection.get("antiPatterns");
-            for (Map.Entry<String, Object> entry : antiPatternSection.entrySet()) {
-                String warningName = entry.getKey();
-                if (entry.getValue() instanceof Boolean) {
-                    boolean enabled = (Boolean) entry.getValue();
-                    if (antiPatternWarnings.containsKey(warningName)) {
-                        antiPatternWarnings.get(warningName).setEnabled(enabled);
+            processLegacyWarningCategory(
+                    (Map<String, Object>) warningsSection
+                            .get("antiPatterns"),
+                    antiPatternWarnings);
+        }
+    }
+
+    /**
+     * Look up a WarningConfig by name in either category map.
+     */
+    private WarningConfig findWarningConfig(String warningName) {
+        WarningConfig cfg = tagQualityWarnings.get(warningName);
+        return cfg != null ? cfg : antiPatternWarnings.get(warningName);
+    }
+
+    /**
+     * Process a legacy nested warning category (tagQuality or antiPatterns).
+     */
+    @SuppressWarnings("unchecked")
+    private void processLegacyWarningCategory(
+            Map<String, Object> section,
+            Map<String, WarningConfig> targetMap) {
+        for (Map.Entry<String, Object> entry : section.entrySet()) {
+            String warningName = entry.getKey();
+            if (entry.getValue() instanceof Boolean) {
+                if (targetMap.containsKey(warningName)) {
+                    targetMap.get(warningName)
+                            .setEnabled((Boolean) entry.getValue());
+                }
+            } else if (entry.getValue() instanceof Map) {
+                Map<String, Object> wc =
+                        (Map<String, Object>) entry.getValue();
+                if (targetMap.containsKey(warningName)) {
+                    WarningConfig cfg = targetMap.get(warningName);
+                    cfg.setEnabled(wc.containsKey("enabled")
+                            ? (Boolean) wc.get("enabled") : true);
+                    if (wc.containsKey("severity")) {
+                        cfg.setSeverity(
+                                (String) wc.get("severity"));
                     }
-                } else if (entry.getValue() instanceof Map) {
-                    Map<String, Object> warningConfig = (Map<String, Object>) entry.getValue();
-                    boolean enabled = warningConfig.containsKey("enabled") ? (Boolean) warningConfig.get("enabled") : true;
-                    if (antiPatternWarnings.containsKey(warningName)) {
-                        antiPatternWarnings.get(warningName).setEnabled(enabled);
-                        
-                        if (warningConfig.containsKey("severity")) {
-                            antiPatternWarnings.get(warningName).setSeverity((String) warningConfig.get("severity"));
+                    if (wc.containsKey("standardAlternatives")) {
+                        List<String> alts = (List<String>)
+                                wc.get("standardAlternatives");
+                        if (alts != null) {
+                            cfg.setStandardAlternatives(alts);
                         }
                     }
                 }

@@ -3,49 +3,29 @@ warnings:
   disabled:
     - DUPLICATE_TAG
     - AMBIGUOUS_TAG
-  
+
+  severity:
+    MISSING_PRIORITY_TAG: error
+    MISSING_TYPE_TAG: warning
+    LOW_VALUE_TAG: info
+    EXCESSIVE_TAGS: error
+    TAG_TYPO: warning
+    DUPLICATE_TAG: info
+    LONG_SCENARIO: error
+    TOO_FEW_STEPS: info
+    MISSING_GIVEN: error
+    MISSING_WHEN: error
+    MISSING_THEN: error
+    UI_FOCUSED_STEP: warning
+    IMPLEMENTATION_DETAIL: warning
+
+  # Legacy enabled overrides (for warnings that need explicit disable)
   tagQuality:
-    MISSING_PRIORITY_TAG:
-      enabled: true
-      severity: error
-    MISSING_TYPE_TAG:
-      enabled: true
-      severity: warning
-    LOW_VALUE_TAG:
-      enabled: true
-      severity: info
-    EXCESSIVE_TAGS:
-      enabled: true
-      severity: error
-    TAG_TYPO:
-      enabled: true
-      severity: warning
     DUPLICATE_TAG:
       enabled: false
-      severity: info
-  
   antiPatterns:
-    LONG_SCENARIO:
-      enabled: true
-      severity: error
     TOO_FEW_STEPS:
       enabled: false
-      severity: info
-    MISSING_GIVEN:
-      enabled: true
-      severity: error
-    MISSING_WHEN:
-      enabled: true
-      severity: error
-    MISSING_THEN:
-      enabled: true
-      severity: error
-    UI_FOCUSED_STEP:
-      enabled: true
-      severity: warning
-    IMPLEMENTATION_DETAIL:
-      enabled: true
-      severity: warning
 
 # Custom thresholds
 thresholds:
@@ -65,7 +45,7 @@ tags:
     - "@High"
     - "@Medium"
     - "@Low"
-  
+
   type:
     - "@UI"
     - "@API"
@@ -75,7 +55,7 @@ tags:
     - "@Unit"
     - "@Functional"
     - "@Acceptance"
-  
+
   lowValue:
     - "@Test"
     - "@Temp"
