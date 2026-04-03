@@ -532,7 +532,7 @@ public class TocFormatter {
         html.append(buildHtmlFilterMetadata(
             includeTags, excludeTags));
 
-        int totalScenarios = 0;
+        long totalScenarios = 0;
         for (Feature feature : features) {
             totalScenarios += feature
                 .getFilteredScenarios(includeTags, excludeTags)
