@@ -79,14 +79,11 @@ java -jar target/ftoc-0.9.1-jar-with-dependencies.jar --version
 import com.heymumford.ftoc.core.FeatureRepository;
 import com.heymumford.ftoc.core.FeatureProcessor;
 import com.heymumford.ftoc.core.Reporter;
-import com.heymumford.ftoc.core.impl.DefaultFeatureRepository;
-import com.heymumford.ftoc.core.impl.DefaultFeatureProcessor;
-import com.heymumford.ftoc.core.impl.DefaultReporter;
 
 // Wire up the core components
-FeatureRepository repository = new DefaultFeatureRepository();
-FeatureProcessor processor = new DefaultFeatureProcessor(repository);
-Reporter reporter = new DefaultReporter();
+FeatureRepository repository = new FeatureRepository();
+FeatureProcessor processor = new FeatureProcessor(repository);
+Reporter reporter = new Reporter();
 
 // Use them directly
 List<Feature> features = repository.loadFeatures(Path.of("/path/to/feature/files"));
