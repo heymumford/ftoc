@@ -1,153 +1,150 @@
-# ftoc - Feature Table of Contents Utility
+# ftoc
 
-FTOC solves the challenge of managing large Cucumber test suites by automatically analyzing feature files to improve discoverability, ensure tag consistency, and maintain quality. It generates structured documentation, comprehensive tag analysis with visualizations, and quality metrics that help teams effectively organize their BDD tests. With cross-language support and CI/CD integration, FTOC bridges the gap between test authoring and maintainable, discoverable test documentation.
+Analyzes Cucumber feature files to generate structured documentation, tag concordance reports, and quality warnings.
 
+[![Build](https://github.com/heymumford/ftoc/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/heymumford/ftoc/actions/workflows/ci-cd.yml)
 [![Version](https://img.shields.io/badge/version-0.9.1-brightgreen.svg)](https://github.com/heymumford/ftoc/releases/tag/v0.9.1)
-[![Build](https://img.shields.io/badge/build-12-blue.svg)](https://github.com/heymumford/ftoc/actions)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
-[![Java Version](https://img.shields.io/badge/java-11+-orange.svg)](https://openjdk.java.net/)
-[![Cucumber](https://img.shields.io/badge/cucumber-compatible-green.svg)](https://cucumber.io/)
-[![Coverage](.github/badges/coverage.svg)](.github/badges/jacoco.csv)
+[![Java](https://img.shields.io/badge/java-11+-orange.svg)](https://openjdk.java.net/)
 
-## Quick Start
+## Install
+
+### Download JAR
+
+Grab the latest release from [GitHub Releases](https://github.com/heymumford/ftoc/releases) and run directly:
 
 ```bash
-git clone https://github.com/heymumford/ftoc.git
-cd ftoc
-mvn clean package
-java -jar target/ftoc-0.9.1-jar-with-dependencies.jar -d /path/to/features
+java -jar ftoc-0.9.1-jar-with-dependencies.jar --help
 ```
 
-## Overview
+### Docker
 
-`ftoc` analyzes Cucumber feature files to create documentation and perform quality checks, helping development teams maintain consistent BDD practices. It provides sophisticated analytics to understand your test suite organization.
+```bash
+docker build -t ftoc .
+docker run --rm -v /path/to/features:/features ftoc -d /features
+```
 
-## Key Features
-
-- **Table of Contents Generation:** Creates structured TOC of all scenarios and scenario outlines
-- **Advanced Tag Analytics:**
-  - Tag occurrence metrics and co-occurrence analysis
-  - Trend detection for rising and declining tag usage
-  - Statistical significance indicators
-  - D3.js visualizations of tag relationships
-- **Quality Assurance:** Flags missing tags or use of low-value generic tags
-- **CI/CD Integration:** Generates JUnit XML reports for integration with CI systems
-- **Multi-Format Output:** Plain text, Markdown, HTML, and JSON reporting
-
-## Who Is This For?
-
-- QA Engineers working with BDD/Cucumber frameworks
-- Development teams practicing Behavior-Driven Development
-- DevOps engineers integrating test reporting into CI/CD pipelines
-- Project managers tracking test coverage and organization
-
-## Installation
+### Build from source
 
 ```bash
 git clone https://github.com/heymumford/ftoc.git
 cd ftoc
-mvn clean package
+mvn package
+```
+
+The JAR is at `target/ftoc-0.9.1-jar-with-dependencies.jar`.
+
+## Quick start
+
+```bash
+# Generate table of contents for all feature files in a directory
+java -jar ftoc.jar -d /path/to/features
+
+# Tag concordance report in markdown
+java -jar ftoc.jar -d /path/to/features --concordance -f md
+
+# Full quality analysis with anti-pattern detection
+java -jar ftoc.jar -d /path/to/features --analyze-tags --detect-anti-patterns
 ```
 
 ## Usage
 
-```bash
-java -jar target/ftoc-<version>-jar-with-dependencies.jar [OPTIONS]
+```
+ftoc [-d <dir>] [-f <format>] [OPTIONS]
 ```
 
-### Options
+### Flags
 
-- `-d <directory>`: Specify the directory to analyze (default: current directory)
-- `--version`, `-v`: Display version information
-- `--help`: Display help message
-
-## Example
-
-```bash
-# Analyze all feature files in a specific directory
-java -jar target/ftoc-0.9.1-jar-with-dependencies.jar -d src/test/resources/features
-
-# Get version information
-java -jar target/ftoc-0.9.1-jar-with-dependencies.jar --version
+```
+Flag                         Description
+----                         -----------
+-d <directory>               Directory to analyze (default: current directory)
+-f, --format <format>        Output format: text, md, html, json, junit (default: text)
+--tags <tags>                Include only scenarios matching these tags (comma-separated)
+--exclude-tags <tags>        Exclude scenarios matching these tags (comma-separated)
+--concordance                Generate tag concordance report instead of TOC
+--concordance-format <fmt>   Override format for concordance report only
+--analyze-tags               Run tag quality analysis
+--tag-quality-format <fmt>   Override format for tag quality report only
+--detect-anti-patterns       Detect feature file anti-patterns
+--anti-pattern-format <fmt>  Override format for anti-pattern report only
+--junit-report               Shorthand: set all outputs to JUnit XML
+--config-file <file>         Custom warning configuration file
+--show-config                Display current warning configuration and exit
+--performance                Enable parallel processing for large repositories
+--benchmark                  Run performance benchmarks (see Benchmark flags below)
+--version, -v                Print version
+--help                       Print help
 ```
 
-## Programmatic Usage
+### Benchmark flags
 
-### Core API (Recommended)
+Used with `--benchmark`:
 
-```java
-import com.heymumford.ftoc.core.FeatureRepository;
-import com.heymumford.ftoc.core.FeatureProcessor;
-import com.heymumford.ftoc.core.Reporter;
-
-// Wire up the core components
-FeatureRepository repository = new FeatureRepository();
-FeatureProcessor processor = new FeatureProcessor(repository);
-Reporter reporter = new Reporter();
-
-// Use them directly
-List<Feature> features = repository.loadFeatures(Path.of("/path/to/feature/files"));
-Map<String, Integer> concordance = processor.generateTagConcordance(features);
-reporter.generateTableOfContents(features, Reporter.Format.MARKDOWN, List.of(), List.of());
+```
+--small        10 files
+--medium       50 files
+--large        200 files
+--very-large   500 files
+--all          All sizes
+--report <f>   Output file (default: benchmark-report.txt)
+--no-cleanup   Keep temporary files after benchmark
 ```
 
-### Legacy API (Deprecated)
+## Output formats
 
-```java
-import com.heymumford.ftoc.FtocUtility;
+**Text** -- Plain text, suitable for terminal output. Default.
 
-// FtocUtility is deprecated and will be removed in a future release.
-FtocUtility ftoc = new FtocUtility();
-ftoc.initialize();
-ftoc.processDirectory("/path/to/feature/files");
+**Markdown** -- Markdown tables and headers. Use `-f md`.
+
+**HTML** -- Standalone HTML with inline styles for tag visualizations.
+
+**JSON** -- Machine-readable output for downstream tooling.
+
+**JUnit XML** -- CI integration. Use `--junit-report` to set all reports at once, or `-f junit` per report.
+
+## Tag analysis
+
+ftoc provides three levels of tag analysis:
+
+**Concordance** (`--concordance`) -- Counts tag occurrences across all features and scenarios. Shows co-occurrence patterns and identifies which tags appear together.
+
+**Quality analysis** (`--analyze-tags`) -- Flags missing priority/type tags, low-value tags (e.g., `@Test`, `@Temp`), orphaned tags, and naming issues. Severity levels: error, warning, info.
+
+**Anti-pattern detection** (`--detect-anti-patterns`) -- Identifies structural problems in feature files: missing Given/When/Then steps, incorrect step ordering, oversized scenarios, and missing examples in scenario outlines.
+
+## Configuration
+
+Warning thresholds and tag definitions are configured in YAML. ftoc searches for configuration in this order:
+
+1. `--config-file <path>` flag
+2. `.ftoc/config.yml` in the working directory
+3. `.ftoc.yml` in the working directory
+
+See [`config/ftoc-warnings.yml`](config/ftoc-warnings.yml) for the full reference. Key sections:
+
+```yaml
+warnings:
+  disabled: []              # Warning names to suppress
+  severity:                 # Override severity per warning (error, warning, info)
+    MISSING_PRIORITY_TAG: error
+    LOW_VALUE_TAG: info
+
+thresholds:
+  maxSteps: 10              # Max steps per scenario
+  minSteps: 2               # Min steps per scenario
+  maxTags: 6                # Max tags per element
+  maxScenarioNameLength: 100
+  maxStepLength: 120
 ```
 
-## Why ftoc?
-
-Managing large suites of Cucumber tests presents challenges:
-
-- **Discoverability:** Finding relevant scenarios becomes difficult as test suites grow
-- **Tag Consistency:** Ensuring proper tagging for test selection and reporting
-- **Documentation:** Generating up-to-date documentation from feature files
-- **Quality Control:** Avoiding generic, unhelpful tagging patterns
-
-`ftoc` addresses these challenges with automated analysis and reporting tools.
+Use `--show-config` to display the resolved configuration.
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) -- project structure, key patterns, how to extend
+- [Architecture](docs/ARCHITECTURE.md) -- project structure and key patterns
 - [Contributing](CONTRIBUTING.md) -- development workflow and conventions
-
-## Version Management
-
-FTOC uses semantic versioning (MAJOR.MINOR.PATCH) combined with build numbers for precise tracking:
-
-```bash
-# Display version information
-./version summary
-```
-
-## Project Structure
-
-```
-ftoc/
-├── config/            # Configuration files and scripts
-├── docs/              # Documentation
-│   ├── adr/           # Architecture Decision Records
-│   ├── c4/            # Architecture diagrams
-│   ├── developer/     # Developer documentation
-│   └── user/          # User documentation
-├── src/               # Source code
-│   ├── main/          # Application code
-│   └── test/          # Test code
-├── .github/           # GitHub templates and workflows
-├── Makefile           # Build and development convenience commands
-├── ftoc               # Main executable script
-├── version            # Version management script
-├── LICENSE            # MIT License
-└── README.md          # This file
-```
 
 ## License
 
-MIT © [heymumford](https://github.com/heymumford)
+MIT -- see [LICENSE](LICENSE).
