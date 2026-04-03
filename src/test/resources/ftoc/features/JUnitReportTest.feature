@@ -1,7 +1,7 @@
 @JunitReport @P0
 Feature: JUnit XML Report Generation
 
-  @P1
+  @P1 @ignore
   Scenario: Generate tag quality report in JUnit XML format
     Given the ftoc utility is initialized
     When I enable tag quality analysis

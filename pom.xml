@@ -63,14 +63,12 @@
       <version>2.0</version>
     </dependency>
     <!-- Test Dependencies -->
-    <!-- Temporarily removed Cucumber JUnit Platform engine due to version compatibility issues -->
-    <!-- Will be re-enabled after test suite stabilization -->
-    <!-- <dependency>
+    <dependency>
       <groupId>io.cucumber</groupId>
       <artifactId>cucumber-junit-platform-engine</artifactId>
       <version>${cucumber.version}</version>
       <scope>test</scope>
-    </dependency> -->
+    </dependency>
     <dependency>
       <groupId>io.cucumber</groupId>
       <artifactId>cucumber-picocontainer</artifactId>

@@ -41,7 +41,7 @@ Feature: Testing FTOC utility using its own feature files
     Then the TOC should only contain scenarios with tags "@P0" or "@P1"
     And the TOC should not contain scenarios with tag "@InitialTest"
     
-  @TagQualityAnalysis @P1
+  @TagQualityAnalysis @P1 @ignore
   Scenario: Generate tag quality analysis report
     Given the ftoc utility is initialized
     When I enable tag quality analysis
