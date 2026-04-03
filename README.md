@@ -115,35 +115,8 @@ Managing large suites of Cucumber tests presents challenges:
 
 ## Documentation
 
-### User Documentation
-
-- [Usage Guide](docs/user/usage.md)
-- [Tag Best Practices](docs/user/tag-best-practices.md)
-- [Tag Concordance Report](docs/user/tag-concordance.md)
-- [JUnit Report Integration](docs/user/junit-report-integration.md)
-- [Docker Usage](docs/user/docker-usage.md)
-- [Cross-Platform Usage](docs/user/cross-platform.md)
-- [Karate Syntax Guide](docs/user/KARATE_SYNTAX.md)
-
-### Developer Documentation
-
-- [Architecture Documentation](docs/developer/ARCHITECTURE.md)
-- [Architecture Decision Records (ADRs)](docs/adr/README.md)
-- [C4 Architecture Diagrams](docs/c4/README.md)
-- [Project Kanban Board](docs/developer/KANBAN.md)
-- [Version Management Guide](docs/developer/VERSION_MANAGEMENT.md)
-- [Classpath Optimization Report](docs/developer/CLASSPATH_OPTIMIZATION.md)
-- [XML Standards and Cleanup](docs/developer/XML_STANDARDS.md)
-- [Security Practices](docs/developer/SECURITY.md)
-- [Code Coverage](docs/developer/CODE_COVERAGE.md)
-- [Claude AI Assistant Guide](docs/developer/CLAUDE.md)
-- [Conventional Commits Guide](docs/developer/CONVENTIONAL_COMMITS.md)
-- [Release Process](docs/developer/RELEASE_PROCESS.md)
-- [Changelog Usage](docs/developer/CHANGELOG_USAGE.md)
-- [Performance Optimization](docs/developer/PERFORMANCE.md)
-- [TOC Formatting Guide](docs/developer/TOC_FORMATTING.md)
-
-For all documentation, see the [docs directory](docs/README.md).
+- [Architecture](docs/ARCHITECTURE.md) -- project structure, key patterns, how to extend
+- [Contributing](CONTRIBUTING.md) -- development workflow and conventions
 
 ## Version Management
 
