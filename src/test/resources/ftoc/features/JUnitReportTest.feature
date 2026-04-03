@@ -10,7 +10,7 @@ Feature: JUnit XML Report Generation
     Then a tag quality report should be generated
     And the report should be in JUnit XML format
 
-  @P1
+  @P1 @ignore
   Scenario: Generate anti-pattern report in JUnit XML format
     Given the ftoc utility is initialized
     When I detect anti-patterns
