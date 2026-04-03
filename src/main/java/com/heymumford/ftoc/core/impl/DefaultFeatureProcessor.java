@@ -3,11 +3,9 @@ package com.heymumford.ftoc.core.impl;
 import com.heymumford.ftoc.core.FeatureProcessor;
 import com.heymumford.ftoc.core.FeatureRepository;
 import com.heymumford.ftoc.model.Feature;
-import com.heymumford.ftoc.performance.ParallelFeatureProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,10 +19,7 @@ import java.util.stream.Collectors;
  */
 public class DefaultFeatureProcessor implements FeatureProcessor {
     private static final Logger logger = LoggerFactory.getLogger(DefaultFeatureProcessor.class);
-    private static final int PARALLEL_PROCESSING_THRESHOLD = 5;
-    
     private final FeatureRepository repository;
-    private boolean performanceMonitoringEnabled;
     
     /**
      * Create a new feature processor with the given repository.
@@ -33,23 +28,8 @@ public class DefaultFeatureProcessor implements FeatureProcessor {
      */
     public DefaultFeatureProcessor(FeatureRepository repository) {
         this.repository = repository;
-        this.performanceMonitoringEnabled = false;
     }
     
-    /**
-     * Enable or disable performance monitoring.
-     * This affects whether parallel processing is used.
-     * 
-     * @param enabled Whether performance monitoring is enabled
-     */
-    public void setPerformanceMonitoringEnabled(boolean enabled) {
-        this.performanceMonitoringEnabled = enabled;
-        
-        if (enabled) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.setEnabled(true);
-        }
-    }
-
     /**
      * Analyze features to extract tag concordance information.
      * 
@@ -117,104 +97,19 @@ public class DefaultFeatureProcessor implements FeatureProcessor {
     }
 
     /**
-     * Process features with parallel execution if appropriate.
-     * 
+     * Process features sequentially.
+     *
      * @param featurePaths List of feature file paths to process
-     * @param useParallel Whether to use parallel processing
      * @return List of processed features
      */
     @Override
-    public List<Feature> processFeatures(List<Path> featurePaths, boolean useParallel) {
+    public List<Feature> processFeatures(List<Path> featurePaths) {
         if (featurePaths.isEmpty()) {
             logger.warn("No feature files to process");
             return new ArrayList<>();
         }
-        
-        boolean shouldUseParallel = useParallel && shouldUseParallelProcessing(featurePaths.size());
-        
-        if (shouldUseParallel) {
-            return processInParallel(featurePaths);
-        } else {
-            return processSequentially(featurePaths);
-        }
-    }
 
-    /**
-     * Check if parallel processing should be used based on number of features.
-     * 
-     * @param featureCount Number of features to process
-     * @return true if parallel processing should be used
-     */
-    @Override
-    public boolean shouldUseParallelProcessing(int featureCount) {
-        return performanceMonitoringEnabled && featureCount > PARALLEL_PROCESSING_THRESHOLD;
-    }
-    
-    /**
-     * Process feature files in parallel.
-     * 
-     * @param featurePaths List of feature file paths to process
-     * @return List of processed features
-     */
-    private List<Feature> processInParallel(List<Path> featurePaths) {
-        logger.info("Using parallel processing for {} feature files", featurePaths.size());
-        
-        if (performanceMonitoringEnabled) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("parallel_processing");
-        }
-        
-        List<Feature> processedFeatures = new ArrayList<>();
-        
-        try {
-            List<File> files = featurePaths.stream()
-                    .map(Path::toFile)
-                    .collect(Collectors.toList());
-            
-            ParallelFeatureProcessor processor = new ParallelFeatureProcessor();
-            
-            // Process files in parallel and get results
-            processedFeatures.addAll(processor.processFeatureFiles(
-                    files, 
-                    progress -> logger.debug("Processing progress: {}%", progress)));
-            
-            // Shutdown the processor
-            processor.shutdown();
-        } catch (Exception e) {
-            logger.error("Error during parallel processing: {}", e.getMessage());
-            logger.info("Falling back to sequential processing");
-            // Clear and fallback to sequential processing
-            processedFeatures.clear();
-            processedFeatures.addAll(processSequentially(featurePaths));
-        }
-        
-        if (performanceMonitoringEnabled) {
-            long duration = com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("parallel_processing");
-            logger.info("Parallel processing completed in {} ms", duration);
-        }
-        
-        return processedFeatures;
-    }
-    
-    /**
-     * Process feature files sequentially.
-     * 
-     * @param featurePaths List of feature file paths to process
-     * @return List of processed features
-     */
-    private List<Feature> processSequentially(List<Path> featurePaths) {
         logger.info("Processing {} feature files sequentially", featurePaths.size());
-        
-        if (performanceMonitoringEnabled) {
-            com.heymumford.ftoc.performance.PerformanceMonitor.startOperation("sequential_processing");
-        }
-        
-        List<Feature> features = repository.loadFeatures(featurePaths);
-        
-        if (performanceMonitoringEnabled) {
-            long duration = com.heymumford.ftoc.performance.PerformanceMonitor.endOperation("sequential_processing");
-            logger.info("Sequential processing completed in {} ms", duration);
-        }
-        
-        return features;
+        return repository.loadFeatures(featurePaths);
     }
 }
