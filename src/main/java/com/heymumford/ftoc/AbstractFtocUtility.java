@@ -80,7 +80,6 @@ public abstract class AbstractFtocUtility {
         System.out.println("  --show-config       Display the current warning configuration and exit");
         System.out.println("  --performance       Enable performance monitoring and optimizations");
         System.out.println("                      Will use parallel processing for large repositories");
-        System.out.println("  --list-plugins      List all loaded plugins and exit");
         System.out.println("  --benchmark         Run performance benchmarks (see benchmark options below)");
         System.out.println("  --version, -v       Display version information");
         System.out.println("  --help              Display this help message");

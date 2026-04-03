@@ -9,7 +9,6 @@ This package provides a comprehensive error handling system for the FTOC applica
 - **FtocException**: Base class for all FTOC-specific exceptions
 - **FileException**: For file I/O related errors
 - **ParsingException**: For feature file parsing errors
-- **PluginException**: For plugin-related errors
 - **ConfigurationException**: For configuration errors
 - **AnalysisException**: For analysis-related errors
 
@@ -20,7 +19,6 @@ The `ErrorCode` enum provides specific error codes organized by category:
 - **General errors** (1000-1999)
 - **File/IO errors** (2000-2999)
 - **Parsing errors** (3000-3999)
-- **Plugin errors** (4000-4999)
 - **Analysis errors** (5000-5999)
 - **Formatter errors** (6000-6999)
 

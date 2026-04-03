@@ -108,8 +108,6 @@ public class ErrorHandler {
             return "File error: " + baseMessage;
         } else if (exception instanceof ParsingException) {
             return "Parsing error: " + baseMessage;
-        } else if (exception instanceof PluginException) {
-            return "Plugin error: " + baseMessage;
         } else if (exception instanceof ConfigurationException) {
             return "Configuration error: " + baseMessage;
         } else if (exception instanceof AnalysisException) {
