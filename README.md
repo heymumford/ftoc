@@ -3,7 +3,7 @@
 Analyzes Cucumber feature files to generate structured documentation, tag concordance reports, and quality warnings.
 
 [![Build](https://github.com/heymumford/ftoc/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/heymumford/ftoc/actions/workflows/ci-cd.yml)
-[![Version](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)](https://github.com/heymumford/ftoc/releases/tag/v1.0.0)
+[![Version](https://img.shields.io/badge/version-1.1.0-brightgreen.svg)](https://github.com/heymumford/ftoc/releases/tag/v1.0.0)
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/java-11+-orange.svg)](https://openjdk.java.net/)
 
