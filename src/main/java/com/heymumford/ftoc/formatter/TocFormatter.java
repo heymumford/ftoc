@@ -1052,7 +1052,7 @@ public class TocFormatter {
         for (Feature feature : filteredFeatures) {
             String fid = sanitizeForId(feature.getName());
             nav.append("      <li><a href=\"#").append(fid);
-            nav.append("\">").append(feature.getName());
+            nav.append("\">").append(escapeHtml(feature.getName()));
             nav.append("</a></li>\n");
         }
         nav.append("    </ul>\n");
@@ -1074,7 +1074,7 @@ public class TocFormatter {
             sb.append("</strong></p>\n      <p>\n");
             for (String tag : includeTags) {
                 sb.append("        <span class=\"tag include\">");
-                sb.append(tag).append("</span>\n");
+                sb.append(escapeHtml(tag)).append("</span>\n");
             }
             sb.append("      </p>\n");
         }
@@ -1083,7 +1083,7 @@ public class TocFormatter {
             sb.append("</strong></p>\n      <p>\n");
             for (String tag : excludeTags) {
                 sb.append("        <span class=\"tag exclude\">");
-                sb.append(tag).append("</span>\n");
+                sb.append(escapeHtml(tag)).append("</span>\n");
             }
             sb.append("      </p>\n");
         }
@@ -1101,9 +1101,9 @@ public class TocFormatter {
         sb.append("      <div class=\"feature\" id=\"");
         sb.append(fid).append("\">\n");
         sb.append("        <h2>");
-        sb.append(feature.getName()).append("</h2>\n");
+        sb.append(escapeHtml(feature.getName())).append("</h2>\n");
         sb.append("        <p class=\"file\">File: ");
-        sb.append(feature.getFilename()).append("</p>\n");
+        sb.append(escapeHtml(feature.getFilename())).append("</p>\n");
 
         if (!feature.getTags().isEmpty()) {
             sb.append("        <p>\n");
@@ -1111,7 +1111,7 @@ public class TocFormatter {
                 String tc = htmlTagClass(
                     tag, includeTags, excludeTags);
                 sb.append("          <span class=\"");
-                sb.append(tc).append("\">").append(tag);
+                sb.append(tc).append("\">").append(escapeHtml(tag));
                 sb.append("</span>\n");
             }
             sb.append("        </p>\n");
@@ -1124,7 +1124,7 @@ public class TocFormatter {
             sb.append("Description</button>\n");
             sb.append("        <div class=\"content\">\n");
             sb.append("          <p>");
-            sb.append(feature.getDescription()
+            sb.append(escapeHtml(feature.getDescription())
                 .replace("\n", "<br/>"));
             sb.append("</p>\n");
             sb.append("        </div>\n");
@@ -1171,7 +1171,7 @@ public class TocFormatter {
         String prefix = scenario.isOutline()
             ? "Scenario Outline: " : "Scenario: ";
         sb.append("            <h3>").append(prefix);
-        sb.append(scenario.getName()).append("</h3>\n");
+        sb.append(escapeHtml(scenario.getName())).append("</h3>\n");
 
         if (!scenario.getTags().isEmpty()) {
             sb.append("            <p>\n");
@@ -1179,7 +1179,7 @@ public class TocFormatter {
                 String tc = htmlTagClass(
                     tag, includeTags, excludeTags);
                 sb.append("              <span class=\"");
-                sb.append(tc).append("\">").append(tag);
+                sb.append(tc).append("\">").append(escapeHtml(tag));
                 sb.append("</span>\n");
             }
             sb.append("            </p>\n");
@@ -1190,7 +1190,7 @@ public class TocFormatter {
             sb.append("            ");
             sb.append("<div class=\"description\">\n");
             sb.append("              <p>");
-            sb.append(scenario.getDescription()
+            sb.append(escapeHtml(scenario.getDescription())
                 .replace("\n", "<br/>"));
             sb.append("</p>\n");
             sb.append("            </div>\n");
@@ -1236,7 +1236,7 @@ public class TocFormatter {
             sb.append("<div class=\"example\">\n");
             if (!example.getName().isEmpty()) {
                 sb.append("                  <h4>");
-                sb.append(example.getName());
+                sb.append(escapeHtml(example.getName()));
                 sb.append("</h4>\n");
             }
 
@@ -1246,7 +1246,7 @@ public class TocFormatter {
                 sb.append("                    <tr>\n");
                 for (String h : example.getHeaders()) {
                     sb.append("                      <th>");
-                    sb.append(h).append("</th>\n");
+                    sb.append(escapeHtml(h)).append("</th>\n");
                 }
                 sb.append("                    </tr>\n");
 
@@ -1257,7 +1257,7 @@ public class TocFormatter {
                     for (String cell
                             : example.getRows().get(i)) {
                         sb.append("                      <td>");
-                        sb.append(cell).append("</td>\n");
+                        sb.append(escapeHtml(cell)).append("</td>\n");
                     }
                     sb.append("                    </tr>\n");
                 }
@@ -1276,7 +1276,7 @@ public class TocFormatter {
                     sb.append("                      <tr>\n");
                     for (String h : example.getHeaders()) {
                         sb.append("                        <th>");
-                        sb.append(h).append("</th>\n");
+                        sb.append(escapeHtml(h)).append("</th>\n");
                     }
                     sb.append("                      </tr>\n");
                     for (int i = 10;
@@ -1287,7 +1287,7 @@ public class TocFormatter {
                                 : example.getRows().get(i)) {
                             sb.append(
                                 "                        <td>");
-                            sb.append(cell);
+                            sb.append(escapeHtml(cell));
                             sb.append("</td>\n");
                         }
                         sb.append(
@@ -1463,6 +1463,22 @@ public class TocFormatter {
         sb.append("</body>\n");
         sb.append("</html>");
         return sb.toString();
+    }
+
+    /**
+     * Escape HTML special characters so user-supplied content cannot inject
+     * markup into the generated HTML document.
+     */
+    private String escapeHtml(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&#39;");
     }
 
     private String htmlTagClass(String tag,
