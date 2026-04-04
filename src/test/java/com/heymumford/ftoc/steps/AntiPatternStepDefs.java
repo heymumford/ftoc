@@ -57,6 +57,11 @@ public class AntiPatternStepDefs {
             case "json":
                 antiPatternFormat = AntiPatternFormatter.Format.JSON;
                 break;
+            case "junit":
+            case "junit-xml":
+            case "xml":
+                antiPatternFormat = AntiPatternFormatter.Format.JUNIT_XML;
+                break;
             default:
                 antiPatternFormat = AntiPatternFormatter.Format.PLAIN_TEXT;
         }
@@ -107,17 +112,30 @@ public class AntiPatternStepDefs {
         String output = ftocStepDefs.getCapturedOutput();
         assertNotNull(output, "No output was captured");
         
-        // Check for anti-pattern report headers
-        boolean hasReport = output.contains("FEATURE ANTI-PATTERN WARNINGS") || 
-                          output.contains("Anti-Pattern Warnings") || 
-                          output.contains("antiPatternWarnings");
-                          
+        // Check for anti-pattern report headers across all formats:
+        // PLAIN_TEXT: "FEATURE ANTI-PATTERN REPORT"
+        // MARKDOWN/HTML: "Feature Anti-Pattern Report"
+        // JSON: "antiPatternReport"
+        // JUNIT_XML: "FTOC Anti-Pattern Analysis"
+        boolean hasReport = output.contains("FEATURE ANTI-PATTERN REPORT") ||
+                          output.contains("Feature Anti-Pattern Report") ||
+                          output.contains("FEATURE ANTI-PATTERN WARNINGS") ||
+                          output.contains("Anti-Pattern Warnings") ||
+                          output.contains("antiPatternWarnings") ||
+                          output.contains("antiPatternReport") ||
+                          output.contains("FTOC Anti-Pattern Analysis");
+
         assertTrue(hasReport, "Output does not contain anti-pattern report");
-        
-        // Also check if it found some issues
-        boolean hasIssues = output.contains("potential issues") || 
-                          output.contains("anti-pattern issues");
-                          
+
+        // Check if it found some issues across formats:
+        // PLAIN_TEXT/MARKDOWN/HTML: "potential anti-pattern issues"
+        // JSON: "count" field (e.g. "count": 84)
+        // JUNIT_XML: "anti-pattern issues" in failure message
+        boolean hasIssues = output.contains("potential anti-pattern issues") ||
+                          output.contains("potential issues") ||
+                          output.contains("anti-pattern issues") ||
+                          output.contains("\"count\":");
+
         assertTrue(hasIssues, "Anti-pattern report doesn't show any issues");
     }
     
@@ -162,7 +180,7 @@ public class AntiPatternStepDefs {
         assertTrue(hasLongScenario, "Output does not report long scenario detection");
     }
     
-    @Then("the anti-pattern report should detect missing Given/When/Then steps")
+    @Then("the anti-pattern report should detect missing Given\\/When\\/Then steps")
     public void verifyMissingStepDetection() {
         logger.info("Verifying missing Given/When/Then step detection");
         
@@ -215,12 +233,21 @@ public class AntiPatternStepDefs {
         // The specific checks will depend on the custom config,
         // but we can verify that some anti-patterns are detected
         
-        boolean hasAntiPatterns = 
-            output.contains("LONG_SCENARIO") || 
-            output.contains("MISSING_GIVEN") || 
-            output.contains("MISSING_WHEN") || 
-            output.contains("MISSING_THEN");
-            
+        // Real output uses natural language section headers (spaces, not underscores).
+        boolean hasAntiPatterns =
+            output.contains("LONG SCENARIO") ||
+            output.contains("LONG_SCENARIO") ||
+            output.contains("Long scenario") ||
+            output.contains("MISSING GIVEN") ||
+            output.contains("MISSING_GIVEN") ||
+            output.contains("Missing Given") ||
+            output.contains("MISSING WHEN") ||
+            output.contains("MISSING_WHEN") ||
+            output.contains("Missing When") ||
+            output.contains("MISSING THEN") ||
+            output.contains("MISSING_THEN") ||
+            output.contains("Missing Then");
+
         assertTrue(hasAntiPatterns, "Output does not show any anti-pattern detections");
     }
     

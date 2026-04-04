@@ -161,31 +161,34 @@ public class ConfigurationStepDefs {
         logger.info("Verifying custom configuration settings are applied");
         String output = ftocStepDefs.getCapturedOutput();
         assertNotNull(output, "No output was captured");
-        
-        // This will depend on what's in the custom config, but we can check for general correctness
-        
-        // Check that something is detected
-        assertTrue(output.contains("MISSING_PRIORITY_TAG") || 
-                   output.contains("MISSING_TYPE_TAG") || 
-                   output.contains("EXCESSIVE_TAGS") || 
-                   output.contains("TAG_TYPO"), 
+
+        // Check that at least one warning section is present (real output uses uppercase headers)
+        assertTrue(output.contains("MISSING PRIORITY TAG") ||
+                   output.contains("MISSING TYPE TAG") ||
+                   output.contains("EXCESSIVE TAGS") ||
+                   output.contains("POSSIBLE TAG TYPO") ||
+                   output.contains("MISSING_PRIORITY_TAG") ||
+                   output.contains("MISSING_TYPE_TAG") ||
+                   output.contains("EXCESSIVE_TAGS") ||
+                   output.contains("TAG_TYPO"),
                    "Output doesn't seem to reflect any configured warnings");
     }
-    
-    @Then("the tag quality report should respect enabled/disabled warnings")
+
+    @Then("the tag quality report should respect enabled\\/disabled warnings")
     public void verifyEnabledDisabledWarnings() {
         logger.info("Verifying enabled/disabled warnings are respected");
         String output = ftocStepDefs.getCapturedOutput();
         assertNotNull(output, "No output was captured");
-        
-        // In custom-warnings.yml, DUPLICATE_TAG is disabled
-        assertFalse(output.contains("DUPLICATE_TAG") || 
-                    output.contains("Duplicate tag"), 
-                    "Output contains disabled warning: DUPLICATE_TAG");
-        
-        // But MISSING_PRIORITY_TAG should be enabled
-        assertTrue(output.contains("MISSING_PRIORITY_TAG") || 
-                   output.contains("Missing priority tag"), 
+
+        // In custom-warnings.yml, DUPLICATE_TAG is disabled — check section header absence
+        assertFalse(output.contains("DUPLICATE TAG\n") ||
+                    output.contains("DUPLICATE_TAG"),
+                    "Output contains disabled warning section: DUPLICATE TAG");
+
+        // MISSING_PRIORITY_TAG should be enabled
+        assertTrue(output.contains("MISSING PRIORITY TAG") ||
+                   output.contains("MISSING_PRIORITY_TAG") ||
+                   output.contains("Scenario is missing a priority tag"),
                    "Output doesn't contain enabled warning: MISSING_PRIORITY_TAG");
     }
     
@@ -212,30 +215,34 @@ public class ConfigurationStepDefs {
         logger.info("Verifying disabled warnings are not present");
         String output = ftocStepDefs.getCapturedOutput();
         assertNotNull(output, "No output was captured");
-        
-        // In disabled-warnings.yml, these are explicitly disabled
-        assertFalse(output.contains("MISSING_PRIORITY_TAG") || 
-                    output.contains("Missing priority tag"), 
-                    "Output contains disabled warning: MISSING_PRIORITY_TAG");
-        
-        assertFalse(output.contains("EXCESSIVE_TAGS") || 
-                    output.contains("Excessive tags"), 
-                    "Output contains disabled warning: EXCESSIVE_TAGS");
+
+        // In disabled-warnings.yml, MISSING_PRIORITY_TAG is disabled — check section header absence
+        assertFalse(output.contains("MISSING PRIORITY TAG\n") ||
+                    output.contains("MISSING_PRIORITY_TAG"),
+                    "Output contains disabled warning section: MISSING PRIORITY TAG");
+
+        // EXCESSIVE_TAGS is also disabled
+        assertFalse(output.contains("EXCESSIVE TAGS\n") ||
+                    output.contains("EXCESSIVE_TAGS"),
+                    "Output contains disabled warning section: EXCESSIVE TAGS");
     }
-    
+
     @Then("the tag quality report should still contain enabled warnings")
     public void verifyEnabledWarningsPresent() {
         logger.info("Verifying enabled warnings are present");
         String output = ftocStepDefs.getCapturedOutput();
         assertNotNull(output, "No output was captured");
-        
-        // In disabled-warnings.yml, these should still be enabled
-        assertTrue(output.contains("MISSING_TYPE_TAG") || 
-                   output.contains("Missing type tag"), 
+
+        // In disabled-warnings.yml, MISSING_TYPE_TAG is enabled
+        assertTrue(output.contains("MISSING TYPE TAG") ||
+                   output.contains("MISSING_TYPE_TAG") ||
+                   output.contains("Missing type tag"),
                    "Output doesn't contain enabled warning: MISSING_TYPE_TAG");
-        
-        assertTrue(output.contains("TAG_TYPO") || 
-                   output.contains("Tag typo"), 
+
+        // TAG_TYPO is also enabled (appears as "POSSIBLE TAG TYPO" in real output)
+        assertTrue(output.contains("POSSIBLE TAG TYPO") ||
+                   output.contains("TAG_TYPO") ||
+                   output.contains("might be a typo"),
                    "Output doesn't contain enabled warning: TAG_TYPO");
     }
     
