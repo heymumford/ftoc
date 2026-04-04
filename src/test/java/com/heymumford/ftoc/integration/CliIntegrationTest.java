@@ -40,7 +40,7 @@ class CliIntegrationTest {
     @Test
     @DisplayName("A14: --help outputs usage with all key flags")
     void helpFlagOutputsUsageWithAllKeyFlags() {
-        FtocUtility.main(new String[]{"--help"});
+        FtocUtility.mainWithExitCode(new String[]{"--help"});
 
         String output = capturedOut.toString();
         assertAll("help output contains key flags",
@@ -57,7 +57,7 @@ class CliIntegrationTest {
     @Test
     @DisplayName("A15: --version outputs version number")
     void versionFlagOutputsVersionNumber() {
-        FtocUtility.main(new String[]{"--version"});
+        FtocUtility.mainWithExitCode(new String[]{"--version"});
 
         String output = capturedOut.toString();
         assertTrue(output.contains("FTOC Utility version"), "missing version banner");
@@ -67,7 +67,7 @@ class CliIntegrationTest {
     @Test
     @DisplayName("A16: Unknown flag prints error and usage hint")
     void unknownFlagPrintsErrorAndUsageHint() {
-        FtocUtility.main(new String[]{"--invalid-flag"});
+        FtocUtility.mainWithExitCode(new String[]{"--invalid-flag"});
 
         String stderr = capturedErr.toString();
         String stdout = capturedOut.toString();
