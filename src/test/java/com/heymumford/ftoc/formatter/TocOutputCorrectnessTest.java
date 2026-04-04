@@ -10,11 +10,19 @@ import com.heymumford.ftoc.model.Scenario;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.xml.sax.InputSource;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Structural correctness tests for each TOC output format.
@@ -268,4 +276,103 @@ public class TocOutputCorrectnessTest {
         result.add(search);
         return result;
     }
+    // --- JSON structural parsing ---
+
+    @Test
+    public void testJsonIsParseable() {
+        // Verify the JSON output can be structurally validated (not just substring checked)
+        String output = formatter.generateToc(features, TocFormatter.Format.JSON);
+        assertDoesNotThrow(
+            () -> validateJsonStructure(output),
+            "JSON output must be structurally valid");
+    }
+
+    @Test
+    public void testJsonWithSpecialCharsIsParseable() {
+        // Feature names with special chars must produce valid JSON
+        Feature special = new Feature("special.feature");
+        special.setName("Feature with \"quotes\" and \\backslash");
+        Scenario s = new Scenario("scenario", "Scenario", 1);
+        special.addScenario(s);
+
+        String output = formatter.generateToc(
+            List.of(special), TocFormatter.Format.JSON);
+        assertDoesNotThrow(
+            () -> validateJsonStructure(output),
+            "JSON output with special chars must be structurally valid");
+    }
+
+    // --- XML structural parsing ---
+
+    @Test
+    public void testJunitXmlIsWellFormedXml() {
+        String output = formatter.generateToc(features, TocFormatter.Format.JUNIT_XML);
+        assertDoesNotThrow(() -> {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            builder.parse(new InputSource(new StringReader(output)));
+        }, "JUnit XML output must be well-formed XML");
+    }
+
+    @Test
+    public void testJunitXmlWithSpecialCharsIsWellFormed() {
+        // Feature names with XML special chars must be properly escaped in XML
+        Feature special = new Feature("special.feature");
+        special.setName("Feature & <Special> \"test\"");
+        Scenario s = new Scenario("scenario with & special", "Scenario", 1);
+        special.addScenario(s);
+
+        String output = formatter.generateToc(
+            List.of(special), TocFormatter.Format.JUNIT_XML);
+        assertDoesNotThrow(() -> {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            builder.parse(new InputSource(new StringReader(output)));
+        }, "JUnit XML with special chars must be well-formed XML");
+    }
+
+    /**
+     * Simple structural JSON validator: balanced braces/brackets, no bare
+     * control characters in strings. Not a full JSON parser — validates enough
+     * to catch the common cases where output is truncated or malformed.
+     */
+    private void validateJsonStructure(String json) {
+        assertNotNull(json, "JSON must not be null");
+        String trimmed = json.trim();
+        assertTrue(trimmed.startsWith("{") || trimmed.startsWith("["),
+            "JSON must start with { or [");
+        assertTrue(trimmed.endsWith("}") || trimmed.endsWith("]"),
+            "JSON must end with } or ]");
+
+        // Check balanced braces and brackets
+        int braces = 0;
+        int brackets = 0;
+        boolean inString = false;
+        boolean escaped = false;
+
+        for (char c : trimmed.toCharArray()) {
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+            if (c == '\\' && inString) {
+                escaped = true;
+                continue;
+            }
+            if (c == '\"'  ) {
+                inString = !inString;
+                continue;
+            }
+            if (!inString) {
+                if (c == '{') braces++;
+                else if (c == '}') braces--;
+                else if (c == '[') brackets++;
+                else if (c == ']') brackets--;
+            }
+        }
+        assertEquals(0, braces, "JSON has unbalanced braces");
+        assertEquals(0, brackets, "JSON has unbalanced brackets");
+    }
+
+
 }

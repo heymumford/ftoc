@@ -128,4 +128,5 @@ class CliExitCodeTest {
             new String[]{"-d", "src/test/resources"});
         assertEquals(0, exitCode, "Valid directory should return exit code 0");
     }
+
 }

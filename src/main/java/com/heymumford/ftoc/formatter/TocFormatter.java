@@ -259,7 +259,7 @@ public class TocFormatter {
                 String anchor = feature.getName().toLowerCase()
                     .replaceAll("[^a-z0-9]+", "-");
                 toc.append("- [")
-                    .append(escapeHtml(feature.getName()));
+                    .append(escapeMarkdown(escapeHtml(feature.getName())));
                 toc.append("](#").append(anchor).append(")\n");
 
                 List<Scenario> scenarios = feature
@@ -276,8 +276,8 @@ public class TocFormatter {
                                 .toLowerCase()
                                 .replaceAll("[^a-z0-9]+", "-");
                         toc.append("  - [");
-                        toc.append(escapeHtml(
-                            scenarios.get(i).getName()));
+                        toc.append(escapeMarkdown(escapeHtml(
+                            scenarios.get(i).getName())));
                         toc.append("](#").append(sAnchor);
                         toc.append(")\n");
                     }
@@ -1487,6 +1487,23 @@ public class TocFormatter {
             .replace(">", "&gt;")
             .replace("\"", "&quot;")
             .replace("'", "&#39;");
+    }
+
+    /**
+     * Escape characters that break Markdown link text ([text](#anchor)).
+     * Names containing ']', '(', ')', or '\\' produce malformed links
+     * without escaping. Always compose with escapeHtml() for user content.
+     */
+    private String escapeMarkdown(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text
+            .replace("\\", "\\\\")
+            .replace("[", "\\[")
+            .replace("]", "\\]")
+            .replace("(", "\\(")
+            .replace(")", "\\)");
     }
 
     private String htmlTagClass(String tag,
