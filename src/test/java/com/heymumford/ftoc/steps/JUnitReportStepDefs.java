@@ -119,11 +119,12 @@ public class JUnitReportStepDefs {
         String capturedOutput = ftocStepDefs.getCapturedOutput();
         assertNotNull(capturedOutput, "No output was captured");
         
-        // Check for XML format indicators
-        boolean isXmlFormat = capturedOutput.startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\"?>") &&
+        // Check for XML format indicators — the JUnit XML report may appear embedded in
+        // multi-report output, so check for content rather than exact start
+        boolean isXmlFormat = capturedOutput.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>") &&
                               capturedOutput.contains("<testsuite") &&
                               capturedOutput.contains("</testsuite>");
-        
+
         logger.info("Is JUnit XML format: {}", isXmlFormat);
         assertTrue(isXmlFormat, "Output is not in JUnit XML format");
         

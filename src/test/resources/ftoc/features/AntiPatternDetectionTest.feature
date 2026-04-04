@@ -1,4 +1,4 @@
-@AntiPatterns @P0 @ignore
+@AntiPatterns @P0
 Feature: Testing anti-pattern detection functionality
   As a QA engineer
   I want to detect anti-patterns in my feature files

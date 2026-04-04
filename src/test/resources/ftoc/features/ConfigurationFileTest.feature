@@ -17,7 +17,7 @@ Feature: Warning configuration file support
     And the tag quality report should detect excessive tags
     And the tag quality report should detect tag typos
 
-  @CustomConfigFile @ignore
+  @CustomConfigFile
   Scenario: Using a custom configuration file
     When I set a custom configuration file path "src/test/resources/ftoc/test-configs/custom-warnings.yml"
     And I enable tag quality analysis
@@ -27,7 +27,7 @@ Feature: Warning configuration file support
     And the tag quality report should respect enabled/disabled warnings
     And the tag quality report should apply custom thresholds
 
-  @DisableWarnings @ignore
+  @DisableWarnings
   Scenario: Disabling specific warnings in configuration
     When I set a custom configuration file path "src/test/resources/ftoc/test-configs/disabled-warnings.yml"
     And I enable tag quality analysis

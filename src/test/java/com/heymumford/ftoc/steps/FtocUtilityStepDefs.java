@@ -929,39 +929,26 @@ public class FtocUtilityStepDefs {
         PrintStream originalOut = System.out;
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         System.setOut(new PrintStream(outputStream));
-        
+
         try {
-            // Enable tag quality analysis and set format to plain text
+            // Enable tag quality analysis (format already set by prior step, if any)
             ftoc.setAnalyzeTagQuality(true);
-            ftoc.setTagQualityFormat(TagQualityFormatter.Format.PLAIN_TEXT);
-            
+
+            // If path points to a .feature file, use its parent directory
+            String resolvedPath = directoryPath.endsWith(".feature")
+                ? new java.io.File(directoryPath).getParent()
+                : directoryPath;
+
             // Process the directory
-            ftoc.processDirectory(directoryPath);
-            
+            ftoc.processDirectory(resolvedPath);
+
             // Save the captured output
             capturedOutput = outputStream.toString();
-            
-            // For testing purposes, add mock warnings to the output
-            // This is temporary until the actual tag quality analyzer is fully integrated
-            capturedOutput += "\nTAG QUALITY REPORT\n=================\n" +
-                    "Found 5 potential tag quality issues.\n\n" +
-                    "SUMMARY\n-------\n" +
-                    "Missing priority tag: 2\n" +
-                    "Tag typo: 1\n" +
-                    "Missing type tag: 1\n" +
-                    "Excessive tags: 1\n\n" +
-                    "MISSING PRIORITY TAG\n-------------------\n" +
-                    "- Scenario is missing a priority tag (in test.feature - Missing Tags)";
-            
+
             // Debug output
             System.setOut(originalOut);
-            logger.info("Captured output with tag quality analysis: {}", 
+            logger.info("Captured output with tag quality analysis: {}",
                     capturedOutput.substring(0, Math.min(200, capturedOutput.length())) + "...");
-            
-            // Print a little more of the output for debugging
-            if (capturedOutput.length() > 500) {
-                logger.info("More output: {}", capturedOutput.substring(200, 500));
-            }
         } finally {
             // Restore original output stream
             System.setOut(originalOut);
@@ -982,10 +969,15 @@ public class FtocUtilityStepDefs {
             case "json":
                 qualityFormat = TagQualityFormatter.Format.JSON;
                 break;
+            case "junit":
+            case "junit-xml":
+            case "xml":
+                qualityFormat = TagQualityFormatter.Format.JUNIT_XML;
+                break;
             default:
                 qualityFormat = TagQualityFormatter.Format.PLAIN_TEXT;
         }
-        
+
         ftoc.setTagQualityFormat(qualityFormat);
         logger.info("Set tag quality format to: {}", qualityFormat);
     }
@@ -998,10 +990,11 @@ public class FtocUtilityStepDefs {
         // Dump the output to the log for debugging
         logger.info("Full captured output: {}", capturedOutput);
         
-        // Check for tag quality report header
-        boolean hasQualityReport = capturedOutput.contains("TAG QUALITY REPORT") || 
+        // Check for tag quality report header (text, markdown, JSON, or JUnit XML format)
+        boolean hasQualityReport = capturedOutput.contains("TAG QUALITY REPORT") ||
                                   capturedOutput.contains("Tag Quality Report") ||
-                                  capturedOutput.contains("tagQualityReport");
+                                  capturedOutput.contains("tagQualityReport") ||
+                                  capturedOutput.contains("FTOC Tag Quality Analysis");
         
         logger.info("Has tag quality report: {}", hasQualityReport);
         assertTrue(hasQualityReport, "Output does not contain a tag quality report");
@@ -1012,14 +1005,19 @@ public class FtocUtilityStepDefs {
         logger.info("Checking for warnings in tag quality report");
         assertNotNull(capturedOutput, "No output was captured");
         
-        // Check for warning-related terms
-        boolean hasWarnings = capturedOutput.contains("warning") || 
+        // Check for warning-related terms (both internal codes and natural-language output)
+        boolean hasWarnings = capturedOutput.contains("warning") ||
                              capturedOutput.contains("Warning") ||
                              capturedOutput.contains("MISSING_") ||
+                             capturedOutput.contains("Missing priority tag") ||
+                             capturedOutput.contains("Missing type tag") ||
                              capturedOutput.contains("TAG_TYPO") ||
+                             capturedOutput.contains("might be a typo") ||
                              capturedOutput.contains("ORPHANED_TAG") ||
                              capturedOutput.contains("DUPLICATE_TAG") ||
-                             capturedOutput.contains("EXCESSIVE_TAGS");
+                             capturedOutput.contains("EXCESSIVE_TAGS") ||
+                             capturedOutput.contains("Excessive tags") ||
+                             capturedOutput.contains("Possible tag typo");
         
         logger.info("Has warnings in report: {}", hasWarnings);
         
