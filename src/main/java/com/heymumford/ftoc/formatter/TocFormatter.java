@@ -394,7 +394,7 @@ public class TocFormatter {
                 toc.append("<h3 id=\"").append(sAnchor);
                 toc.append("\">");
                 toc.append(prefix.substring(4));
-                toc.append(scenario.getName());
+                toc.append(escapeHtml(scenario.getName()));
                 toc.append("</h3>\n\n");
 
                 if (!scenario.getTags().isEmpty()) {

@@ -217,8 +217,15 @@ public class WarningConfiguration {
 
             // Process tags section
             if (config.containsKey("tags")) {
-                processTagsSection(
-                    (Map<String, Object>) config.get("tags"));
+                Object tagsObj = config.get("tags");
+                if (tagsObj instanceof Map) {
+                    processTagsSection(
+                        (Map<String, Object>) tagsObj);
+                } else if (tagsObj != null) {
+                    validationErrors.add(
+                        "'tags' must be a map, got: "
+                        + tagsObj.getClass().getSimpleName());
+                }
             }
 
             // Process and validate thresholds section
