@@ -434,14 +434,28 @@ public class FtocUtility {
 
 
     public static void main(String[] args) {
+        int exitCode = mainWithExitCode(args);
+        if (exitCode != 0) {
+            System.exit(exitCode);
+        }
+    }
+
+    /**
+     * Main entry point that returns an exit code instead of calling System.exit().
+     * Exit codes: 0 = success, 1 = user error (bad args, missing dir).
+     *
+     * @param args Command-line arguments
+     * @return Exit code (0 for success, 1 for error)
+     */
+    public static int mainWithExitCode(String[] args) {
         if (args.length == 0 || Arrays.asList(args).contains("--help")) {
             printHelp();
-            return;
+            return 0;
         }
 
         if (Arrays.asList(args).contains("--version") || Arrays.asList(args).contains("-v")) {
             System.out.println("FTOC Utility version " + VERSION);
-            return;
+            return 0;
         }
 
         // Validate flags before processing
@@ -469,7 +483,7 @@ public class FtocUtility {
             if (arg.startsWith("-") && !knownFlags.contains(arg)) {
                 System.err.println("Unknown option: " + arg);
                 printHelp();
-                return;
+                return 1;
             }
             if (flagsWithValue.contains(arg)) {
                 i++; // skip the value argument
@@ -491,7 +505,7 @@ public class FtocUtility {
         // Check if we should just display the config and exit
         if (Arrays.asList(args).contains("--show-config")) {
             System.out.println(ftoc.getWarningConfigSummary());
-            return;
+            return 0;
         }
 
         String directoryPath = ".";
@@ -609,8 +623,19 @@ public class FtocUtility {
         ftoc.setAnalyzeTagQuality(analyzeTagQuality);
         ftoc.setDetectAntiPatterns(detectAntiPatterns);
         
+        // Validate directory exists before processing
+        Path dirPath = Paths.get(directoryPath);
+        if (java.nio.file.Files.notExists(dirPath)
+                || !java.nio.file.Files.isDirectory(dirPath)) {
+            System.err.println("Invalid directory: "
+                + directoryPath);
+            return 1;
+        }
+
         // Process the directory and generate concordance data
-        ftoc.processDirectory(directoryPath, generateConcordanceOnly);
+        ftoc.processDirectory(directoryPath,
+            generateConcordanceOnly);
+        return 0;
     }
 
 }
