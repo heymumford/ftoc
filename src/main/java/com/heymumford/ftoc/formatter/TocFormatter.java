@@ -253,7 +253,8 @@ public class TocFormatter {
             for (Feature feature : filteredFeatures) {
                 String anchor = feature.getName().toLowerCase()
                     .replaceAll("[^a-z0-9]+", "-");
-                toc.append("- [").append(feature.getName());
+                toc.append("- [")
+                    .append(escapeHtml(feature.getName()));
                 toc.append("](#").append(anchor).append(")\n");
 
                 List<Scenario> scenarios = feature
@@ -270,7 +271,8 @@ public class TocFormatter {
                                 .toLowerCase()
                                 .replaceAll("[^a-z0-9]+", "-");
                         toc.append("  - [");
-                        toc.append(scenarios.get(i).getName());
+                        toc.append(escapeHtml(
+                            scenarios.get(i).getName()));
                         toc.append("](#").append(sAnchor);
                         toc.append(")\n");
                     }
@@ -320,7 +322,8 @@ public class TocFormatter {
             String anchor = feature.getName().toLowerCase()
                 .replaceAll("[^a-z0-9]+", "-");
             toc.append("<h2 id=\"").append(anchor).append("\">");
-            toc.append(feature.getName()).append("</h2>\n\n");
+            toc.append(escapeHtml(feature.getName()))
+                .append("</h2>\n\n");
 
             toc.append("*File: ");
             toc.append(feature.getFilename()).append("*\n\n");
@@ -1204,7 +1207,7 @@ public class TocFormatter {
             sb.append("              ");
             sb.append("<div class=\"steps\">\n");
             for (String step : scenario.getSteps()) {
-                sb.append(step).append("\n");
+                sb.append(escapeHtml(step)).append("\n");
             }
             sb.append("              </div>\n");
             sb.append("            </div>\n");

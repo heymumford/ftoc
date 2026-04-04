@@ -32,6 +32,8 @@ public class FtocException extends Exception {
     }
 
     public String getDetailedMessage() {
-        return String.format("[%s] %s", errorCode.getCode(), getMessage());
+        String code = errorCode != null
+            ? errorCode.getCode() : "UNKNOWN";
+        return String.format("[%s] %s", code, getMessage());
     }
 }

@@ -145,6 +145,98 @@ public class WarningConfigurationValidationTest {
     }
 
     @Test
+    public void testNullTagQualitySectionDoesNotNPE()
+            throws IOException {
+        Path config = tempDir.resolve("null-section.yml");
+        Files.writeString(config, String.join("\n",
+            "warnings:",
+            "  tagQuality:"
+        ));
+
+        assertDoesNotThrow(
+            () -> new WarningConfiguration(config.toString()),
+            "Empty tagQuality section must not throw NPE");
+    }
+
+    @Test
+    public void testWarningsNonMapIsReported() throws IOException {
+        Path config = tempDir.resolve("warnings-bool.yml");
+        Files.writeString(config, "warnings: true\n");
+
+        WarningConfiguration wc =
+            new WarningConfiguration(config.toString());
+        List<String> errors = wc.getValidationErrors();
+        assertFalse(errors.isEmpty(),
+            "'warnings: true' should produce a validation error");
+    }
+
+    @Test
+    public void testThresholdsNonMapIsReported() throws IOException {
+        Path config = tempDir.resolve("thresholds-str.yml");
+        Files.writeString(config, "thresholds: \"string\"\n");
+
+        WarningConfiguration wc =
+            new WarningConfiguration(config.toString());
+        List<String> errors = wc.getValidationErrors();
+        assertFalse(errors.isEmpty(),
+            "'thresholds: string' should produce a validation error");
+    }
+
+    @Test
+    public void testSeverityNonMapIsReported() throws IOException {
+        Path config = tempDir.resolve("severity-int.yml");
+        Files.writeString(config, String.join("\n",
+            "warnings:",
+            "  severity: 42"
+        ));
+
+        WarningConfiguration wc =
+            new WarningConfiguration(config.toString());
+        List<String> errors = wc.getValidationErrors();
+        assertFalse(errors.isEmpty(),
+            "'severity: 42' should produce a validation error");
+    }
+
+    @Test
+    public void testNegativeFloatThresholdDetected()
+            throws IOException {
+        Path config = tempDir.resolve("neg-float.yml");
+        Files.writeString(config, String.join("\n",
+            "thresholds:",
+            "  maxSteps: -0.5"
+        ));
+
+        WarningConfiguration wc =
+            new WarningConfiguration(config.toString());
+        List<String> errors = wc.getValidationErrors();
+        assertFalse(errors.isEmpty(),
+            "-0.5 threshold must be detected as negative");
+        assertTrue(errors.stream().anyMatch(
+            e -> e.contains("negative") || e.contains("maxSteps")),
+            "Error should flag the negative threshold");
+    }
+
+    @Test
+    public void testValidationErrorsNotAccumulatedAcrossLoads()
+            throws IOException {
+        Path badConfig = tempDir.resolve("bad-accum.yml");
+        Files.writeString(badConfig, String.join("\n",
+            "bogusKey:",
+            "  foo: bar"
+        ));
+
+        WarningConfiguration wc1 =
+            new WarningConfiguration(badConfig.toString());
+        assertFalse(wc1.getValidationErrors().isEmpty());
+
+        WarningConfiguration wc2 =
+            new WarningConfiguration(badConfig.toString());
+        assertEquals(wc1.getValidationErrors().size(),
+            wc2.getValidationErrors().size(),
+            "Separate instances must not leak errors");
+    }
+
+    @Test
     public void testDefaultConfigHasNoValidationErrors() {
         WarningConfiguration wc = new WarningConfiguration();
         List<String> errors = wc.getValidationErrors();

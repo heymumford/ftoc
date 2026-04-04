@@ -18,8 +18,14 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -88,7 +94,8 @@ public class FtocUtility {
             logger.debug("Loaded version: {}", version);
             return version;
         } catch (IOException e) {
-            logger.error("Error loading version properties: {}", e.getMessage());
+            logger.error("Error loading version properties",
+                e);
             return "unknown";
         }
     }
@@ -131,10 +138,6 @@ public class FtocUtility {
         System.out.println("  --all               Run benchmarks on all repository sizes");
         System.out.println("  --report <file>     Specify report output file (default: benchmark-report.txt)");
         System.out.println("  --no-cleanup        Do not delete temporary files after benchmark");
-    }
-
-    protected static void printVersion() {
-        System.out.println("FTOC Utility version " + VERSION);
     }
 
     public void setOutputFormat(TocFormatter.Format format) {
@@ -624,7 +627,14 @@ public class FtocUtility {
         ftoc.setDetectAntiPatterns(detectAntiPatterns);
         
         // Validate directory exists before processing
-        Path dirPath = Paths.get(directoryPath);
+        Path dirPath;
+        try {
+            dirPath = Paths.get(directoryPath);
+        } catch (java.nio.file.InvalidPathException e) {
+            System.err.println("Invalid directory path: "
+                + directoryPath);
+            return 1;
+        }
         if (java.nio.file.Files.notExists(dirPath)
                 || !java.nio.file.Files.isDirectory(dirPath)) {
             System.err.println("Invalid directory: "

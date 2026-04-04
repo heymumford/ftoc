@@ -7,10 +7,10 @@ FTOC (Feature Table of Contents) is a CLI tool that analyzes Cucumber and Karate
 ```
 src/main/java/com/heymumford/ftoc/
 ├── FtocUtility.java           # CLI entry point and argument parsing
-├── core/                      # Interfaces
+├── core/                      # Interfaces (not yet wired)
 │   ├── FeatureRepository.java #   find and load feature files
-│   ├── FeatureProcessor.java  #   filter, tag concordance, parallel processing
-│   └── Reporter.java          #   generate reports in multiple formats
+│   ├── FeatureProcessor.java  #   filter, tag concordance
+│   └── Reporter.java          #   generate reports
 ├── model/                     # Domain objects
 │   ├── Feature.java           #   parsed feature file
 │   ├── Scenario.java          #   individual scenario
@@ -42,19 +42,19 @@ src/main/java/com/heymumford/ftoc/
 
 ## Key Patterns
 
-**Three-layer pipeline.** Every run follows: Repository (find/parse files) -> Processor (filter, analyze) -> Reporter (format output). Each layer is an interface with a default implementation. Custom implementations can be injected via the constructor.
+**Three-stage pipeline.** Every run follows: parse (find and parse files) -> analyze (filter, tag concordance, quality checks) -> format (generate reports). All stages are concrete classes in `FtocUtility`.
 
-**Parser selection.** `FeatureParserFactory` inspects file content to choose between the standard Gherkin parser and the Karate parser. This keeps parser-specific logic out of the repository.
+**Parser selection.** `FeatureParserFactory` inspects file content to choose between the standard Gherkin parser and the Karate parser. This keeps parser-specific logic isolated.
 
 **Analyzer chain.** Quality analysis runs multiple independent analyzers (typo detection, frequency analysis, low-value tag detection, anti-pattern detection). Each analyzer operates on the parsed model and produces findings that the formatter renders.
 
-**Format strategy.** Each report type has a dedicated formatter that handles all output formats (plain text, Markdown, HTML, JSON, JUnit XML). JUnit XML output allows integration with CI reporting tools.
+**Format strategy.** Each report type has a dedicated formatter class that handles all output formats (plain text, Markdown, HTML, JSON, JUnit XML). JUnit XML output allows integration with CI reporting tools.
 
 ## How to Extend
 
-**Add an output format.** Modify the relevant formatter class in `formatter/` to handle the new format. Add the format to the `Reporter.Format` enum.
+**Add an output format.** Add the format to the relevant formatter's `Format` enum and implement rendering in that formatter class.
 
-**Add a new analyzer.** Create a class in `analyzer/`, wire it into the processing pipeline in `FeatureProcessor`, and add formatting support in the appropriate formatter.
+**Add a new analyzer.** Create a class in `analyzer/`, wire it into `FtocUtility.processDirectory()`, and add formatting support in a new or existing formatter.
 
 **Add a parser.** Implement parsing logic in `parser/`, register it in `FeatureParserFactory` with a detection heuristic.
 

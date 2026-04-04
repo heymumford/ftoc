@@ -75,4 +75,13 @@ class CliIntegrationTest {
         assertTrue(stderr.contains("Unknown option: --invalid-flag"), "stderr missing unknown option message");
         assertTrue(stdout.contains("Usage:"), "stdout missing usage hint after error");
     }
+
+    @Test
+    @DisplayName("Invalid path characters return exit code 1")
+    void invalidPathReturnsExitCode1() {
+        int code = FtocUtility.mainWithExitCode(
+            new String[]{"-d", "\0invalid"});
+        assertEquals(1, code,
+            "Invalid path must return exit code 1, not throw");
+    }
 }

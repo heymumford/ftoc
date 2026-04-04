@@ -14,7 +14,7 @@ Analyzes Cucumber feature files to generate structured documentation, tag concor
 Grab the latest release from [GitHub Releases](https://github.com/heymumford/ftoc/releases) and run directly:
 
 ```bash
-java -jar ftoc-1.0.0-jar-with-dependencies.jar --help
+java -jar ftoc-<version>-jar-with-dependencies.jar --help
 ```
 
 ### Docker
@@ -32,19 +32,19 @@ cd ftoc
 mvn package
 ```
 
-The JAR is at `target/ftoc-1.0.0-jar-with-dependencies.jar`.
+The JAR is at `target/ftoc-<version>-jar-with-dependencies.jar`.
 
 ## Quick start
 
 ```bash
 # Generate table of contents for all feature files in a directory
-java -jar ftoc.jar -d /path/to/features
+java -jar ftoc-<version>-jar-with-dependencies.jar -d /path/to/features
 
 # Tag concordance report in markdown
-java -jar ftoc.jar -d /path/to/features --concordance -f md
+java -jar ftoc-<version>-jar-with-dependencies.jar -d /path/to/features --concordance -f md
 
 # Full quality analysis with anti-pattern detection
-java -jar ftoc.jar -d /path/to/features --analyze-tags --detect-anti-patterns
+java -jar ftoc-<version>-jar-with-dependencies.jar -d /path/to/features --analyze-tags --detect-anti-patterns
 ```
 
 ## Usage
@@ -109,7 +109,7 @@ ftoc provides three levels of tag analysis:
 
 **Concordance** (`--concordance`) -- Counts tag occurrences across all features and scenarios. Shows co-occurrence patterns and identifies which tags appear together.
 
-**Quality analysis** (`--analyze-tags`) -- Flags missing priority/type tags, low-value tags (e.g., `@Test`, `@Temp`), orphaned tags, and naming issues. Severity levels: error, warning, info.
+**Quality analysis** (`--analyze-tags`) -- Flags missing priority/type tags, low-value tags (e.g., `@Test`, `@Temp`), orphaned tags, and naming issues. Severity levels: error, warning, info, hint.
 
 **Anti-pattern detection** (`--detect-anti-patterns`) -- Identifies structural problems in feature files: missing Given/When/Then steps, incorrect step ordering, oversized scenarios, and missing examples in scenario outlines.
 
@@ -120,13 +120,16 @@ Warning thresholds and tag definitions are configured in YAML. ftoc searches for
 1. `--config-file <path>` flag
 2. `.ftoc/config.yml` in the working directory
 3. `.ftoc.yml` in the working directory
+4. `.config/ftoc/warnings.yml` in the working directory
+5. `config/ftoc-warnings.yml` in the working directory
+6. `~/.config/ftoc/warnings.yml` (user home)
 
 See [`config/ftoc-warnings.yml`](config/ftoc-warnings.yml) for the full reference. Key sections:
 
 ```yaml
 warnings:
   disabled: []              # Warning names to suppress
-  severity:                 # Override severity per warning (error, warning, info)
+  severity:                 # Override severity per warning (error, warning, info, hint)
     MISSING_PRIORITY_TAG: error
     LOW_VALUE_TAG: info
 
