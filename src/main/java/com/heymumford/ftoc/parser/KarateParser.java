@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
@@ -27,10 +28,10 @@ public class KarateParser extends FeatureParser {
     private static final List<String> KARATE_MARKERS = Arrays.asList("#string", "#number", "#boolean", "#array", "#object", "#null", "#notnull", "#regex", "#uuid", "#present", "#notpresent");
 
     @Override
-    public Feature parseFeatureFile(String filePath) throws FtocException {
-        Feature feature = super.parseFeatureFile(filePath);
+    public Feature parseFeatureFile(File file) throws FtocException {
+        Feature feature = super.parseFeatureFile(file);
         try {
-            enhanceWithKarateInfo(feature, filePath);
+            enhanceWithKarateInfo(feature, file.getAbsolutePath());
         } catch (Exception e) {
             logger.warn("Error enhancing feature with Karate information: {}", e.getMessage());
         }
