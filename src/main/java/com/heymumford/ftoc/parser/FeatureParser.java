@@ -100,6 +100,7 @@ public class FeatureParser {
         Scenario.Example currentExample = null;
         boolean inExamplesTable = false;
         boolean isFirstExampleRow = true;
+        boolean featureKeywordFound = false;
         List<String> exampleHeaders = null;
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
@@ -108,9 +109,10 @@ public class FeatureParser {
                 lineNumber++;
                 if (line.trim().isEmpty()) { continue; }
                 if (line.trim().startsWith("#")) { continue; }
-                if (line.trim().startsWith("@")) { currentTags = parseTagLine(line); continue; }
+                if (line.trim().startsWith("@")) { currentTags.addAll(parseTagLine(line)); continue; }
                 Matcher featureMatcher = FEATURE_PATTERN.matcher(line);
                 if (featureMatcher.matches()) {
+                    featureKeywordFound = true;
                     feature.setName(featureMatcher.group(1).trim());
                     currentTags.forEach(feature::addTag);
                     currentTags.clear();
@@ -181,7 +183,7 @@ public class FeatureParser {
                     }
                 }
             }
-            if (feature.getName() == null || feature.getName().isEmpty()) {
+            if (!featureKeywordFound) {
                 throw new FtocException("Invalid feature file: No 'Feature:' definition found in " + file.getName(), ErrorCode.INVALID_GHERKIN);
             }
             if (feature.getScenarios().isEmpty()) {
