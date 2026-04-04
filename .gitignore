@@ -52,8 +52,12 @@ Thumbs.db
 tmp/
 temp/
 
-# Maven 
-.mvn/
+# Maven wrapper (tracked)
+!mvnw
+!mvnw.cmd
+!.mvn/wrapper/maven-wrapper.properties
+
+# Maven
 dependency-reduced-pom.xml
 pom.xml.tag
 pom.xml.releaseBackup
