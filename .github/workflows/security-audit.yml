@@ -4,6 +4,9 @@ on:
     - cron: '0 6 * * 1'  # Monday 6am UTC
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -15,6 +18,8 @@ jobs:
           java-version: '11'
           cache: maven
       - name: OWASP dependency check
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: mvn org.owasp:dependency-check-maven:check -DfailBuildOnCVSS=9
       - name: Upload report
         if: always()
