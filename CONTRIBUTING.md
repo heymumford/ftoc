@@ -5,26 +5,26 @@ Thanks for taking the time to contribute.
 ## Prerequisites
 
 - Java 11+
-- Maven 3.8+
+- Maven 3.8+ (the included Maven wrapper handles this automatically)
 
 ## Building
 
 ```bash
-mvn clean package
+./mvnw clean package
 ```
 
-This compiles the source, runs all tests, and produces the executable JAR in `target/`.
+This compiles the source, runs all tests, and produces the executable JAR in `target/`. The `mvnw` wrapper downloads the correct Maven version on first run -- no local Maven install required.
 
 ## Running Tests
 
 ```bash
-mvn test
+./mvnw test
 ```
 
 For a full verification pass including integration checks:
 
 ```bash
-mvn verify
+./mvnw verify
 ```
 
 ## Code Style
@@ -32,7 +32,7 @@ mvn verify
 The project enforces Checkstyle rules during the build. Fix any violations before submitting:
 
 ```bash
-mvn checkstyle:check
+./mvnw checkstyle:check
 ```
 
 ## Pull Requests
@@ -41,7 +41,7 @@ mvn checkstyle:check
 2. Keep PRs focused and small when possible.
 3. Include context in the PR description: what changed and why.
 4. Add or update tests when behavior changes.
-5. Run `mvn verify` locally and confirm a clean build before opening the PR.
+5. Run `./mvnw verify` locally and confirm a clean build before opening the PR.
 6. CI must pass before merge.
 
 ## Reporting Issues

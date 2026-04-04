@@ -21,11 +21,11 @@ jobs:
         cache: maven
 
     - name: Build, test, and verify coverage
-      run: mvn -B verify jacoco:report
+      run: ./mvnw -B verify jacoco:report
 
     - name: Version consistency check
       run: |
-        POM_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+        POM_VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
         JAR_PATH=$(find target -name "ftoc-*jar-with-dependencies.jar" | head -1)
         JAR_VERSION=$(java -jar "$JAR_PATH" --version | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
         if [ "$POM_VERSION" != "$JAR_VERSION" ]; then

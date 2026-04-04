@@ -29,7 +29,7 @@ docker run --rm -v /path/to/features:/features ftoc -d /features
 ```bash
 git clone https://github.com/heymumford/ftoc.git
 cd ftoc
-mvn package
+./mvnw package
 ```
 
 The JAR is at `target/ftoc-<version>-jar-with-dependencies.jar`.
