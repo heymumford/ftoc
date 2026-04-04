@@ -61,6 +61,17 @@ public class ErrorHandlingTest {
     }
 
     @Test
+    public void testDetailedMessageWithNullErrorCode() {
+        FtocException exception = new FtocException(
+            "msg", null, null);
+        assertDoesNotThrow(exception::getDetailedMessage,
+            "getDetailedMessage must not NPE when errorCode is null");
+        String msg = exception.getDetailedMessage();
+        assertTrue(msg.contains("msg"),
+            "Detailed message must still contain the message text");
+    }
+
+    @Test
     public void testErrorCodes() {
         for (ErrorCode code : ErrorCode.values()) {
             assertNotNull(code.getCode());

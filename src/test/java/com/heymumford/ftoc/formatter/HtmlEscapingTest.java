@@ -132,6 +132,77 @@ class HtmlEscapingTest {
                 "Scenario description must be HTML-escaped");
     }
 
+    // --- scenario steps ---
+
+    @Test
+    @DisplayName("Scenario steps with <script> tag are escaped in HTML")
+    void scenarioStepsAreEscaped() {
+        Feature feature = featureWithName("Normal Feature");
+        Scenario scenario = scenarioWithName("Scenario with XSS step");
+        scenario.addStep(
+            "Given a payload <script>alert('xss')</script>");
+        feature.addScenario(scenario);
+
+        TocFormatter formatter = new TocFormatter();
+        String html = formatter.generateToc(
+                List.of(feature), TocFormatter.Format.HTML,
+                Collections.emptyList(), Collections.emptyList());
+
+        assertFalse(html.contains("<script>alert"),
+                "Steps must not contain raw <script> tag");
+        assertTrue(html.contains("&lt;script&gt;"),
+                "Step content must be HTML-escaped");
+    }
+
+    // --- example table ---
+
+    @Test
+    @DisplayName("Example table cells with XSS payload are escaped in HTML")
+    void exampleTableCellsAreEscaped() {
+        Feature feature = featureWithName("Normal Feature");
+        Scenario outline = new Scenario(
+            "Outline with XSS", "Scenario Outline", 1);
+        outline.addStep("Given a <value>");
+        Scenario.Example example = new Scenario.Example("data");
+        example.setHeaders(List.of("value"));
+        example.addRow(
+            List.of("<img onerror=alert(1) src=x>"));
+        outline.addExample(example);
+        feature.addScenario(outline);
+
+        TocFormatter formatter = new TocFormatter();
+        String html = formatter.generateToc(
+                List.of(feature), TocFormatter.Format.HTML,
+                Collections.emptyList(), Collections.emptyList());
+
+        assertFalse(html.contains("<img onerror"),
+                "Example cells must not contain raw <img> tag");
+        assertTrue(html.contains("&lt;img"),
+                "Example cell content must be HTML-escaped");
+    }
+
+    // --- markdown raw HTML headings ---
+
+    @Test
+    @DisplayName("Feature name with <script> is escaped in markdown h2")
+    void markdownRawHtmlHeadingIsEscaped() {
+        Feature feature = featureWithName(
+            "<script>alert('xss')</script>");
+        Scenario scenario = scenarioWithName("Normal scenario");
+        feature.addScenario(scenario);
+
+        TocFormatter formatter = new TocFormatter();
+        String md = formatter.generateToc(
+                List.of(feature), TocFormatter.Format.MARKDOWN,
+                Collections.emptyList(), Collections.emptyList());
+
+        assertFalse(md.contains("<script>alert"),
+                "Markdown output must not contain raw <script> "
+                + "in HTML headings");
+        assertTrue(md.contains("&lt;script&gt;"),
+                "Feature name in raw HTML h2 must be escaped");
+    }
+
     // --- tag names ---
 
     @Test

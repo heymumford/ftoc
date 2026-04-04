@@ -204,22 +204,43 @@ public class WarningConfiguration {
             if (config.containsKey("warnings")) {
                 Object warningsObj = config.get("warnings");
                 if (warningsObj instanceof Map) {
-                    validateWarningsSection((Map<String, Object>) warningsObj);
-                    processWarningsSection((Map<String, Object>) warningsObj);
+                    validateWarningsSection(
+                        (Map<String, Object>) warningsObj);
+                    processWarningsSection(
+                        (Map<String, Object>) warningsObj);
+                } else if (warningsObj != null) {
+                    validationErrors.add(
+                        "'warnings' must be a map, got: "
+                        + warningsObj.getClass().getSimpleName());
                 }
             }
 
             // Process tags section
             if (config.containsKey("tags")) {
-                processTagsSection((Map<String, Object>) config.get("tags"));
+                Object tagsObj = config.get("tags");
+                if (tagsObj instanceof Map) {
+                    processTagsSection(
+                        (Map<String, Object>) tagsObj);
+                } else if (tagsObj != null) {
+                    validationErrors.add(
+                        "'tags' must be a map, got: "
+                        + tagsObj.getClass().getSimpleName());
+                }
             }
 
             // Process and validate thresholds section
             if (config.containsKey("thresholds")) {
                 Object thresholdsObj = config.get("thresholds");
                 if (thresholdsObj instanceof Map) {
-                    validateThresholdsSection((Map<String, Object>) thresholdsObj);
-                    processThresholdsSection((Map<String, Object>) thresholdsObj);
+                    validateThresholdsSection(
+                        (Map<String, Object>) thresholdsObj);
+                    processThresholdsSection(
+                        (Map<String, Object>) thresholdsObj);
+                } else if (thresholdsObj != null) {
+                    validationErrors.add(
+                        "'thresholds' must be a map, got: "
+                        + thresholdsObj.getClass()
+                            .getSimpleName());
                 }
             }
 
@@ -260,18 +281,31 @@ public class WarningConfiguration {
         if (warningsSection.containsKey("severity")) {
             Object severityObj = warningsSection.get("severity");
             if (severityObj instanceof Map) {
-                Map<String, Object> severityMap = (Map<String, Object>) severityObj;
-                for (Map.Entry<String, Object> entry : severityMap.entrySet()) {
+                Map<String, Object> severityMap =
+                    (Map<String, Object>) severityObj;
+                for (Map.Entry<String, Object> entry
+                        : severityMap.entrySet()) {
                     if (!isKnownWarning(entry.getKey())) {
-                        validationErrors.add("Unknown warning name in severity config: " + entry.getKey());
+                        validationErrors.add(
+                            "Unknown warning name in severity"
+                            + " config: " + entry.getKey());
                     }
-                    String severityValue = String.valueOf(entry.getValue()).toUpperCase();
-                    if (!VALID_SEVERITIES.contains(severityValue)) {
-                        validationErrors.add("Invalid severity value '" + entry.getValue()
+                    String severityValue = String.valueOf(
+                        entry.getValue()).toUpperCase();
+                    if (!VALID_SEVERITIES.contains(
+                            severityValue)) {
+                        validationErrors.add(
+                            "Invalid severity value '"
+                            + entry.getValue()
                             + "' for warning " + entry.getKey()
-                            + ". Valid values: ERROR, WARNING, INFO, HINT");
+                            + ". Valid values: ERROR, WARNING,"
+                            + " INFO, HINT");
                     }
                 }
+            } else if (severityObj != null) {
+                validationErrors.add(
+                    "'warnings.severity' must be a map, got: "
+                    + severityObj.getClass().getSimpleName());
             }
         }
 
@@ -292,14 +326,18 @@ public class WarningConfiguration {
     /**
      * Validate the thresholds section for non-numeric and negative values.
      */
-    private void validateThresholdsSection(Map<String, Object> thresholdsSection) {
-        for (Map.Entry<String, Object> entry : thresholdsSection.entrySet()) {
+    private void validateThresholdsSection(
+            Map<String, Object> thresholdsSection) {
+        for (Map.Entry<String, Object> entry
+                : thresholdsSection.entrySet()) {
             Object value = entry.getValue();
             if (!(value instanceof Number)) {
-                validationErrors.add("Threshold '" + entry.getKey()
+                validationErrors.add("Threshold '"
+                    + entry.getKey()
                     + "' must be a number, got: " + value);
-            } else if (((Number) value).intValue() < 0) {
-                validationErrors.add("Threshold '" + entry.getKey()
+            } else if (((Number) value).doubleValue() < 0) {
+                validationErrors.add("Threshold '"
+                    + entry.getKey()
                     + "' must not be negative, got: " + value);
             }
         }
@@ -406,6 +444,9 @@ public class WarningConfiguration {
     private void processLegacyWarningCategory(
             Map<String, Object> section,
             Map<String, WarningConfig> targetMap) {
+        if (section == null) {
+            return;
+        }
         for (Map.Entry<String, Object> entry : section.entrySet()) {
             String warningName = entry.getKey();
             if (entry.getValue() instanceof Boolean) {

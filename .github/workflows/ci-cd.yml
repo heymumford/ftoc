@@ -20,11 +20,8 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
-    - name: Build and test
-      run: mvn -B package jacoco:report
-
-    - name: Check coverage threshold
-      run: mvn verify -DskipTests
+    - name: Build, test, and verify coverage
+      run: mvn -B verify jacoco:report
 
     - name: Version consistency check
       run: |

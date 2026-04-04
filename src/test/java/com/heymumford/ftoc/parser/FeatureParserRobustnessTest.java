@@ -230,6 +230,20 @@ public class FeatureParserRobustnessTest {
     }
 
     @Test
+    public void testEmptyFeatureNameHandled() throws Exception {
+        Feature f = parseFeatureString(String.join("\n",
+            "Feature:",
+            "  Scenario: Some scenario",
+            "    Given something"
+        ));
+
+        assertNotNull(f.getName(),
+            "Feature name must not be null");
+        assertTrue(f.getName().isEmpty(),
+            "Feature: with no text should yield empty name");
+    }
+
+    @Test
     public void testScenarioNameWithSpecialCharacters() throws Exception {
         Feature f = parseFeatureString(String.join("\n",
             "Feature: Special chars",
