@@ -9,6 +9,8 @@ jobs:
   build:
     name: Build for Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -42,7 +44,7 @@ jobs:
           body_path: changelog-entry.md
           files: |
             target/ftoc-${{ steps.get_version.outputs.VERSION }}.jar
-            target/ftoc-${{ steps.get_version.outputs.VERSION }}-with-dependencies.jar
+            target/ftoc-${{ steps.get_version.outputs.VERSION }}-jar-with-dependencies.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

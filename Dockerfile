@@ -1,4 +1,4 @@
-FROM maven:3.8-openjdk-11 as builder
+FROM maven:3.8-openjdk-11 AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ RUN mvn package
 FROM eclipse-temurin:11-jre-alpine
 
 # Create a non-root user to run the application
-RUN groupadd -r ftoc && useradd -r -g ftoc ftoc
+RUN addgroup -S ftoc && adduser -S -G ftoc ftoc
 
 WORKDIR /opt/ftoc
 
