@@ -129,13 +129,4 @@ class CliExitCodeTest {
         assertEquals(0, exitCode, "Valid directory should return exit code 0");
     }
 
-    @Test
-    @DisplayName("main() with invalid flag must complete without killing the JVM")
-    void mainWithInvalidFlagDoesNotKillJvm() {
-        boolean completed = false;
-        FtocUtility.main(new String[]{"--totally-invalid-flag"});
-        completed = true;
-        assertTrue(completed,
-            "main() with invalid flag must not call System.exit()");
-    }
 }

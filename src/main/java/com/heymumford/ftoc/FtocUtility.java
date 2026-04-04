@@ -442,7 +442,10 @@ public class FtocUtility {
 
 
     public static void main(String[] args) {
-        mainWithExitCode(args);
+        int exitCode = mainWithExitCode(args);
+        if (exitCode != 0) {
+            System.exit(exitCode);
+        }
     }
 
     /**
