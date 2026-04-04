@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Eric C. Mumford (@heymumford)
+ * Licensed under the MIT License. See LICENSE file in the project root.
+ */
+
 package com.heymumford.ftoc.exception;
 
 import org.junit.jupiter.api.Test;

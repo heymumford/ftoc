@@ -1,0 +1,5 @@
+# Default owner for everything
+* @heymumford
+
+# Parser changes need extra review
+src/main/java/com/heymumford/ftoc/parser/ @heymumford
