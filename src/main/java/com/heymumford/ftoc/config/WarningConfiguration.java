@@ -76,7 +76,16 @@ public class WarningConfiguration {
     private final Set<String> disabledWarnings = new HashSet<>();
     private final Map<String, List<String>> customTags = new HashMap<>();
     private final Map<String, Object> thresholds = new HashMap<>();
+    private final List<String> validationErrors = new ArrayList<>();
     private final String configPath;
+
+    private static final Set<String> VALID_TOP_LEVEL_KEYS = new HashSet<>(Arrays.asList(
+        "warnings", "tags", "thresholds"
+    ));
+
+    private static final Set<String> VALID_SEVERITIES = new HashSet<>(Arrays.asList(
+        "ERROR", "WARNING", "INFO", "HINT"
+    ));
     
     /**
      * Creates a new configuration manager with default settings (all warnings enabled).
@@ -183,22 +192,37 @@ public class WarningConfiguration {
                 logger.warn("Configuration file is empty or invalid: {}", filePath);
                 return false;
             }
-            
-            // Process warnings section
-            if (config.containsKey("warnings")) {
-                processWarningsSection((Map<String, Object>) config.get("warnings"));
+
+            // Validate top-level keys
+            for (String key : config.keySet()) {
+                if (!VALID_TOP_LEVEL_KEYS.contains(key)) {
+                    validationErrors.add("Unknown top-level configuration key: " + key);
+                }
             }
-            
+
+            // Process and validate warnings section
+            if (config.containsKey("warnings")) {
+                Object warningsObj = config.get("warnings");
+                if (warningsObj instanceof Map) {
+                    validateWarningsSection((Map<String, Object>) warningsObj);
+                    processWarningsSection((Map<String, Object>) warningsObj);
+                }
+            }
+
             // Process tags section
             if (config.containsKey("tags")) {
                 processTagsSection((Map<String, Object>) config.get("tags"));
             }
-            
-            // Process thresholds section
+
+            // Process and validate thresholds section
             if (config.containsKey("thresholds")) {
-                processThresholdsSection((Map<String, Object>) config.get("thresholds"));
+                Object thresholdsObj = config.get("thresholds");
+                if (thresholdsObj instanceof Map) {
+                    validateThresholdsSection((Map<String, Object>) thresholdsObj);
+                    processThresholdsSection((Map<String, Object>) thresholdsObj);
+                }
             }
-            
+
             return true;
         } catch (IOException e) {
             logger.warn("Error reading configuration file: {}", e.getMessage());
@@ -209,6 +233,86 @@ public class WarningConfiguration {
         }
     }
     
+    /**
+     * Validate the warnings section for unknown names, bad types, and invalid severities.
+     */
+    @SuppressWarnings("unchecked")
+    private void validateWarningsSection(Map<String, Object> warningsSection) {
+        // Validate disabled list
+        if (warningsSection.containsKey("disabled")) {
+            Object disabled = warningsSection.get("disabled");
+            if (disabled == null) {
+                // null is OK -- means the key exists but the list is empty/commented out
+            } else if (!(disabled instanceof List)) {
+                validationErrors.add("'warnings.disabled' must be a list, got: "
+                    + disabled.getClass().getSimpleName());
+            } else {
+                for (Object item : (List<?>) disabled) {
+                    String warningName = String.valueOf(item);
+                    if (!isKnownWarning(warningName)) {
+                        validationErrors.add("Unknown warning in disabled list: " + warningName);
+                    }
+                }
+            }
+        }
+
+        // Validate severity map
+        if (warningsSection.containsKey("severity")) {
+            Object severityObj = warningsSection.get("severity");
+            if (severityObj instanceof Map) {
+                Map<String, Object> severityMap = (Map<String, Object>) severityObj;
+                for (Map.Entry<String, Object> entry : severityMap.entrySet()) {
+                    if (!isKnownWarning(entry.getKey())) {
+                        validationErrors.add("Unknown warning name in severity config: " + entry.getKey());
+                    }
+                    String severityValue = String.valueOf(entry.getValue()).toUpperCase();
+                    if (!VALID_SEVERITIES.contains(severityValue)) {
+                        validationErrors.add("Invalid severity value '" + entry.getValue()
+                            + "' for warning " + entry.getKey()
+                            + ". Valid values: ERROR, WARNING, INFO, HINT");
+                    }
+                }
+            }
+        }
+
+        // Validate standardAlternatives map
+        if (warningsSection.containsKey("standardAlternatives")) {
+            Object altObj = warningsSection.get("standardAlternatives");
+            if (altObj instanceof Map) {
+                Map<String, Object> altMap = (Map<String, Object>) altObj;
+                for (String warningName : altMap.keySet()) {
+                    if (!isKnownWarning(warningName)) {
+                        validationErrors.add("Unknown warning name in standardAlternatives: " + warningName);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Validate the thresholds section for non-numeric and negative values.
+     */
+    private void validateThresholdsSection(Map<String, Object> thresholdsSection) {
+        for (Map.Entry<String, Object> entry : thresholdsSection.entrySet()) {
+            Object value = entry.getValue();
+            if (!(value instanceof Number)) {
+                validationErrors.add("Threshold '" + entry.getKey()
+                    + "' must be a number, got: " + value);
+            } else if (((Number) value).intValue() < 0) {
+                validationErrors.add("Threshold '" + entry.getKey()
+                    + "' must not be negative, got: " + value);
+            }
+        }
+    }
+
+    /**
+     * Check if a warning name is recognized in either category.
+     */
+    private boolean isKnownWarning(String warningName) {
+        return tagQualityWarnings.containsKey(warningName)
+            || antiPatternWarnings.containsKey(warningName);
+    }
+
     /**
      * Process the warnings section of the configuration file.
      * Supports both the simplified flat format (severity/standardAlternatives maps)
@@ -437,6 +541,15 @@ public class WarningConfiguration {
         return configPath;
     }
     
+    /**
+     * Get validation errors found when loading the configuration.
+     *
+     * @return List of validation error messages, empty if config is valid
+     */
+    public List<String> getValidationErrors() {
+        return Collections.unmodifiableList(validationErrors);
+    }
+
     /**
      * Get a summary of the current configuration.
      *
