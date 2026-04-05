@@ -31,7 +31,7 @@
     <!-- Dependency Versions -->
     <cucumber.version>7.34.2</cucumber.version>
     <slf4j.version>2.0.16</slf4j.version>
-    <junit.jupiter.version>5.14.2</junit.jupiter.version>
+    <junit.jupiter.version>6.0.3</junit.jupiter.version>
     <junit.platform.version>1.14.2</junit.platform.version>
     <!-- Plugin Versions -->
     <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
